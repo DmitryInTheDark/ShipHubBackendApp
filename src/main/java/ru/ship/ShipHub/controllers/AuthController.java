@@ -8,42 +8,49 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ship.ShipHub.models.request.LoginRequest;
-import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.request.RegistrationRequest;
+import ru.ship.ShipHub.models.response.AuthResponse;
 import ru.ship.ShipHub.services.AuthService;
-import ru.ship.ShipHub.util.Mapper;
+import ru.ship.ShipHub.util.JWTUtil;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService service;
-    private final Mapper mapper;
     private final Logger log;
+    private final JWTUtil jwtUtil;
 
-    public AuthController(AuthService service, Mapper mapper) {
+    public AuthController(AuthService service, JWTUtil jwtUtil) {
         this.service = service;
-        this.mapper = mapper;
+        this.jwtUtil = jwtUtil;
         this.log = LoggerFactory.getLogger(AuthController.class);
     }
 
     @PostMapping("/login")
-    public PersonDTO login(
+    public AuthResponse login(
             @RequestBody @Valid LoginRequest loginRequest
     ){
-        return service.login(loginRequest.email, loginRequest.password).getBaseInfo();
+        var person = service.login(loginRequest.email, loginRequest.password);
+        return new AuthResponse(
+                jwtUtil.generateToken(person.getId(), person.getUsername()),
+                person
+        );
     }
 
     @PostMapping("/registration")
-    public PersonDTO registration(
+    public AuthResponse registration(
             @RequestBody @Valid RegistrationRequest registrationRequest
     ){
-        log.info("Controller reg");
-        return service.registration(
+        var person = service.registration(
                 registrationRequest.email,
                 registrationRequest.password,
-                registrationRequest.name
-        ).getBaseInfo();
+                registrationRequest.name);
+        log.info("Controller reg");
+        return new AuthResponse(
+                jwtUtil.generateToken(person.getId(), person.getUsername()),
+                person
+        );
     }
 
 }

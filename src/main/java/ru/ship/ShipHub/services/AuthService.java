@@ -3,13 +3,11 @@ package ru.ship.ShipHub.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.repositories.PersonRepository;
-import ru.ship.ShipHub.security.PersonDetails;
 import ru.ship.ShipHub.util.Mapper;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
-
 import javax.management.openmbean.InvalidKeyException;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -29,16 +27,16 @@ public class AuthService {
         this.personRepository = personRepository;
     }
 
-    public PersonDetails login(
+    public PersonDTO login(
             String email,
             String password
     ){
         PersonEntity person = personRepository.findByEmail(email).orElseThrow(NoSuchElementException::new);
         if (!Objects.equals(person.getPassword(), password)) throw new InvalidKeyException();
-        return new PersonDetails(person);
+        return mapper.map(person);
     }
 
-    public PersonDetails registration(
+    public PersonDTO registration(
             String email,
             String password,
             String username
@@ -51,6 +49,6 @@ public class AuthService {
         PersonEntity entity = new PersonEntity(
             username, email, password
         );
-        return new PersonDetails(personRepository.save(entity));
+        return mapper.map(personRepository.save(entity));
     }
 }

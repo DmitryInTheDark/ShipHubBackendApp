@@ -1,12 +1,9 @@
 package ru.ship.ShipHub.security;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.entity.PersonEntity;
-import ru.ship.ShipHub.util.Mapper;
 
 import java.util.Collection;
 import java.util.List;
@@ -14,8 +11,6 @@ import java.util.List;
 public class PersonDetails implements UserDetails {
 
     private final PersonEntity person;
-    @Autowired
-    private Mapper mapper;
 
     public PersonDetails(PersonEntity person) {
         this.person = person;
@@ -56,7 +51,4 @@ public class PersonDetails implements UserDetails {
         return true;
     }
 
-    public PersonDTO getBaseInfo(){
-        return mapper.map(person);
-    }
 }

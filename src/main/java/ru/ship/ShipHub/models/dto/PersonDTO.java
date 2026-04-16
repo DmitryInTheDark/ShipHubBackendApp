@@ -22,6 +22,8 @@ public class PersonDTO {
         this.email = email;
     }
 
+    public PersonDTO(){}
+
     public Integer getId() {
         return id;
     }
