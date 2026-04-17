@@ -30,7 +30,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final LegalInfoRepository legalInfoRepository;
     private final PhysicalRepository physicalRepository;
-
     private final PersonRepository personRepository;
 
     public AuthService(Mapper mapper, MailUtil mailUtil, PasswordEncoder passwordEncoder, LegalInfoRepository legalInfoRepository, PhysicalRepository physicalRepository, PersonRepository personRepository) {
@@ -88,6 +87,8 @@ public class AuthService {
             case PHYSICAL -> {
                 PhysicalInfoEntity physicalInfo = mapper.map(dto.physicalInfo);
                 person.setPhysicalInfo(physicalInfo);
+                physicalInfo.setPerson(person);
+                physicalRepository.save(physicalInfo);
             }
         }
         try {
