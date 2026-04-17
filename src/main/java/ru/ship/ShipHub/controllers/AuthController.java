@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ship.ShipHub.models.dto.PersonDTO;
-import ru.ship.ShipHub.models.request.LoginRequest;
-import ru.ship.ShipHub.models.request.RegistrationRequest;
-import ru.ship.ShipHub.models.request.VerifyCodeRequest;
+import ru.ship.ShipHub.models.dto.auth.LoginRequestDTO;
+import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
+import ru.ship.ShipHub.models.dto.auth.VerifyCodeRequestDTO;
 import ru.ship.ShipHub.models.response.AuthResponse;
 import ru.ship.ShipHub.services.AuthService;
 import ru.ship.ShipHub.util.JWTUtil;
@@ -34,7 +34,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponse login(
-            @RequestBody @Valid LoginRequest loginRequest
+            @RequestBody @Valid LoginRequestDTO loginRequest
     ){
         var person = service.login(loginRequest.email, loginRequest.password);
         return new AuthResponse(
@@ -45,23 +45,15 @@ public class AuthController {
 
     @PostMapping("/registration")
     public ResponseEntity registration(
-            @RequestBody @Valid RegistrationRequest registrationRequest
+            @RequestBody @Valid RegistrationRequestDTO registrationRequest
     ){
-        service.registration(
-                registrationRequest.email,
-                registrationRequest.password,
-                registrationRequest.name,
-                registrationRequest.type);
+        service.registration(registrationRequest);
         return ResponseEntity.ok().body(Map.of("response", "Код отправлен на почту " + registrationRequest.email));
-//        return new AuthResponse(
-//                jwtUtil.generateToken(person.getId(), person.getUsername()),
-//                person
-//        );
     }
 
     @PostMapping("/verify_code")
     public PersonDTO verifyCode(
-            @RequestBody @Valid VerifyCodeRequest request
+            @RequestBody @Valid VerifyCodeRequestDTO request
     ){
         return service.verifyCode(request.email, request.code);
     }

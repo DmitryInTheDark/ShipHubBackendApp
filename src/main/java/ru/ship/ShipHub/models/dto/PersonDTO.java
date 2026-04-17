@@ -12,6 +12,10 @@ public class PersonDTO {
 
     private PersonType type;
 
+    private LegalInfoDTO legalInfo;
+
+    private PhysicalInfoDTO physicalInfo;
+
     public String getEmail() {
         return email;
     }
@@ -50,5 +54,21 @@ public class PersonDTO {
 
     public void setType(PersonType type) {
         this.type = type;
+    }
+
+    public LegalInfoDTO getLegalInfo() {
+        return legalInfo;
+    }
+
+    public void setLegalInfo(LegalInfoDTO legalInfo) {
+        this.legalInfo = legalInfo;
+    }
+
+    public PhysicalInfoDTO getPhysicalInfo() {
+        return physicalInfo;
+    }
+
+    public void setPhysicalInfo(PhysicalInfoDTO physicalInfo) {
+        this.physicalInfo = physicalInfo;
     }
 }

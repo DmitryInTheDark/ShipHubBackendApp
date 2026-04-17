@@ -1,9 +1,9 @@
-package ru.ship.ShipHub.models.request;
+package ru.ship.ShipHub.models.dto.auth;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
-public class LoginRequest {
+public class LoginRequestDTO {
     @NotEmpty
     public String email;
     @NotEmpty

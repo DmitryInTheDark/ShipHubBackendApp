@@ -1,11 +1,14 @@
-package ru.ship.ShipHub.models.request;
+package ru.ship.ShipHub.models.dto.auth;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import ru.ship.ShipHub.models.dto.LegalInfoDTO;
+import ru.ship.ShipHub.models.dto.PhysicalInfoDTO;
 import ru.ship.ShipHub.util.PersonType;
 
-public class RegistrationRequest {
+public class RegistrationRequestDTO {
 
     @NotEmpty
     public String email;
@@ -20,4 +23,10 @@ public class RegistrationRequest {
 
     @NotNull
     public PersonType type;
+
+    @Nullable
+    public LegalInfoDTO legalInfo;
+
+    @Nullable
+    public PhysicalInfoDTO physicalInfo;
 }

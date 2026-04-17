@@ -31,6 +31,12 @@ public class PersonEntity {
     @Enumerated(value = EnumType.STRING)
     private PersonType type;
 
+    @OneToOne(mappedBy = "person")
+    private LegalInfoEntity legalInfo;
+
+    @OneToOne(mappedBy = "person")
+    private PhysicalInfoEntity physicalInfo;
+
     public String getEmail() {
         return email;
     }
@@ -40,6 +46,26 @@ public class PersonEntity {
     }
 
     public PersonEntity(){}
+
+    public PersonEntity(String username, String email, String password, Boolean isActive, String verificationCode, PersonType type, LegalInfoEntity info) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.isActive = isActive;
+        this.verificationCode = verificationCode;
+        this.type = type;
+        this.legalInfo = info;
+    }
+
+    public PersonEntity(String username, String email, String password, Boolean isActive, String verificationCode, PersonType type, PhysicalInfoEntity info) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.isActive = isActive;
+        this.verificationCode = verificationCode;
+        this.type = type;
+        this.physicalInfo = info;
+    }
 
     public PersonEntity(String username, String email, String password, Boolean isActive, String verificationCode, PersonType type) {
         this.username = username;
@@ -96,5 +122,21 @@ public class PersonEntity {
 
     public void setType(PersonType type) {
         this.type = type;
+    }
+
+    public LegalInfoEntity getLegalInfo() {
+        return legalInfo;
+    }
+
+    public void setLegalInfo(LegalInfoEntity legalInfo) {
+        this.legalInfo = legalInfo;
+    }
+
+    public PhysicalInfoEntity getPhysicalInfo() {
+        return physicalInfo;
+    }
+
+    public void setPhysicalInfo(PhysicalInfoEntity physicalInfo) {
+        this.physicalInfo = physicalInfo;
     }
 }

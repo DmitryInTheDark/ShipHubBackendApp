@@ -1,9 +1,9 @@
-package ru.ship.ShipHub.models.request;
+package ru.ship.ShipHub.models.dto.auth;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
-public class VerifyCodeRequest {
+public class VerifyCodeRequestDTO {
     @NotEmpty
 //    @Size(min = 5, max = 5, message = "Код должен быть длинной пять символов")
     public String code;
