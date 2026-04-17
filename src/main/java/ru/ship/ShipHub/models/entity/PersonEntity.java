@@ -1,9 +1,7 @@
 package ru.ship.ShipHub.models.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import ru.ship.ShipHub.util.PersonType;
 
 @Entity
 @Table(name = "users")
@@ -15,15 +13,23 @@ public class PersonEntity {
     private Integer id;
 
     @Column(name = "username")
-    @NotNull
-    @NotEmpty
-    @Size(min = 2, max = 100, message = "Имя должно быть длинной от 2 до 100 символов")
     private String username;
 
-    @Column(name = "email")
-    @NotNull
-    @NotEmpty
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "email", unique = true)
     private String email;
+
+    @Column(name = "is_active")
+    private Boolean isActive;
+
+    @Column(name = "verification_code")
+    private String verificationCode;
+
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
+    private PersonType type;
 
     public String getEmail() {
         return email;
@@ -33,18 +39,15 @@ public class PersonEntity {
         this.email = email;
     }
 
-    @Column(name = "password")
-    @NotNull
-    @NotEmpty
-    @Size(min = 5, max = 100, message = "Пароль должен быть длинной от 2 до 100 символов")
-    private String password;
-
     public PersonEntity(){}
 
-    public PersonEntity(String username, String email, String password) {
+    public PersonEntity(String username, String email, String password, Boolean isActive, String verificationCode, PersonType type) {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.isActive = isActive;
+        this.verificationCode = verificationCode;
+        this.type = type;
     }
 
     public Integer getId() {
@@ -69,5 +72,29 @@ public class PersonEntity {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public PersonType getType() {
+        return type;
+    }
+
+    public void setType(PersonType type) {
+        this.type = type;
     }
 }

@@ -2,9 +2,9 @@ package ru.ship.ShipHub.security;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.ship.ShipHub.models.entity.PersonEntity;
-
 import java.util.Collection;
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class PersonDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + person.getType().toString()));
     }
 
     @Override

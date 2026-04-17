@@ -2,14 +2,17 @@ package ru.ship.ShipHub.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.repositories.PersonRepository;
+import ru.ship.ShipHub.util.MailUtil;
 import ru.ship.ShipHub.util.Mapper;
+import ru.ship.ShipHub.util.PersonType;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
-import javax.management.openmbean.InvalidKeyException;
-import java.util.NoSuchElementException;
+import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -18,11 +21,15 @@ public class AuthService {
 
     private final Mapper mapper;
     private final Logger log;
+    private final MailUtil mailUtil;
+    private final PasswordEncoder passwordEncoder;
 
     private final PersonRepository personRepository;
 
-    public AuthService(Mapper mapper, PersonRepository personRepository) {
+    public AuthService(Mapper mapper, MailUtil mailUtil, PasswordEncoder passwordEncoder, PersonRepository personRepository) {
         this.mapper = mapper;
+        this.mailUtil = mailUtil;
+        this.passwordEncoder = passwordEncoder;
         this.log = LoggerFactory.getLogger(AuthService.class);
         this.personRepository = personRepository;
     }
@@ -31,24 +38,76 @@ public class AuthService {
             String email,
             String password
     ){
-        PersonEntity person = personRepository.findByEmail(email).orElseThrow(NoSuchElementException::new);
-        if (!Objects.equals(person.getPassword(), password)) throw new InvalidKeyException();
+        PersonEntity person = personRepository.findByEmail(email).orElseThrow(() -> new BadCredentialsException("Неверный логин"));
+        if (!person.getActive()){
+            throw new BadCredentialsException("Активируйте аккаунт перед тем, как авторизоваться");
+        }
+        if (!passwordEncoder.matches(password, person.getPassword())) {
+            throw new BadCredentialsException("Неверный пароль");
+        }
         return mapper.map(person);
     }
 
-    public PersonDTO registration(
+    public void registration(
             String email,
             String password,
-            String username
+            String username,
+            PersonType type
     ){
-        log.info("service reg");
         Optional<PersonEntity> personEntityOptional = personRepository.findByEmail(email);
-        if (personEntityOptional.isPresent()){
-            throw new PersonIsExistException();
+        personEntityOptional
+                .filter(PersonEntity::getActive)
+                .ifPresent(p -> { throw new PersonIsExistException("Пользователь с таким email уже существует"); });
+        var code = generateCode();
+        PersonEntity person;
+        if(personEntityOptional.isPresent()){
+            person = personEntityOptional.get();
+            person.setPassword(passwordEncoder.encode(password));
+            person.setUsername(username);
+            person.setType(type);
+            person.setVerificationCode(code);
+        }else{
+            person = new PersonEntity(
+                    username, email, passwordEncoder.encode(password), false, code, type
+            );
         }
-        PersonEntity entity = new PersonEntity(
-            username, email, password
-        );
-        return mapper.map(personRepository.save(entity));
+        personRepository.save(person);
+        try {
+            sendMail(email, code);
+        }catch (Exception e){
+            log.error("Mail send error", e);
+            personRepository.findById(person.getId()).ifPresent( entity -> {
+                entity.setActive(false);
+                personRepository.save(entity);
+                }
+            );
+        }
+    }
+
+    public PersonDTO verifyCode(String email, String code){
+        var person = personRepository.findByEmail(email).orElseThrow(PersonNotFoundException::new);
+        if (person.getActive()){
+            throw new PersonIsExistException("Пользователь уже существует");
+        }else if (!Objects.equals(code, person.getVerificationCode())){
+            throw new IllegalArgumentException("Неправильный код");
+        }else{
+            person.setActive(true);
+            person.setVerificationCode(null);
+            personRepository.save(person);
+        }
+        return mapper.map(person);
+    }
+
+    public void sendMail(String mail, String message){
+        mailUtil.sendMessage(mail, "Подтверждение регистрации", message);
+    }
+
+    public String generateCode() {
+        StringBuilder code = new StringBuilder();
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        for (int i = 0; i < 5; i++) {
+            code.append(chars.charAt((int) (Math.random() * (chars.length()))));
+        }
+        return code.toString();
     }
 }
