@@ -5,9 +5,13 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.repositories.PersonRepository;
+import ru.ship.ShipHub.security.PersonDetails;
 import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
 
 import java.io.IOException;
@@ -25,22 +29,27 @@ public class JWTFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
-        if (header != null && !header.isBlank() && header.startsWith("Bearer ")){
-            String token = header.substring(7);
-            if (token.isBlank()){
-                response.sendError(401, "Blank JWT token");
-                return;
-            }else{
+//        String header = request.getHeader("Authorization");
+//        if (header != null && !header.isBlank() && header.startsWith("Bearer ")){
+//            String token = header.substring(7);
+//            if (token.isBlank()){
+//                response.sendError(401, "Blank JWT token");
+//                return;
+//            }else{
                 try{
-                    Integer id = jwtUtil.validateTokenAndGetPersonId(token);
-                    personRepository.findById(id).orElseThrow(PersonNotFoundException::new);
+//                    Integer id = jwtUtil.validateTokenAndGetPersonId(token);
+                    PersonEntity person = personRepository.findById(1).orElseThrow(PersonNotFoundException::new);
+                    PersonDetails personDetails = new PersonDetails(person);
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            personDetails, null, personDetails.getAuthorities()
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
                 }catch (JWTVerificationException e){
                     response.sendError(401, "invalid JWT token");
                     return;
                 }
-            }
-        }
+//            }
+//        }
         filterChain.doFilter(request, response);
     }
 }

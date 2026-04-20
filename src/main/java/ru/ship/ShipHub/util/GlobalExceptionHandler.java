@@ -1,5 +1,7 @@
 package ru.ship.ShipHub.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,8 +12,11 @@ import java.util.Objects;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler
     public ResponseEntity<BaseExceptionResponseEntity> handleException(Exception e){
+        log.error("UnsupportedExceprion: ", e);
         return response(
                 500,
                 "Ошибка " + e.getLocalizedMessage(),

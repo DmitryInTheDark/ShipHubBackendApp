@@ -79,17 +79,20 @@ public class AuthService {
         personRepository.save(person);
         switch (person.getType()){
             case LEGAL -> {
+                if (dto.legalInfo == null) throw new NullPointerException("Отсутствует информация о юридическом лице");
                 LegalInfoEntity legalInfo = mapper.map(dto.legalInfo);
                 person.setLegalInfo(legalInfo);
                 legalInfo.setPerson(person);
                 legalInfoRepository.save(legalInfo);
             }
             case PHYSICAL -> {
+                if (dto.physicalInfo == null) throw new NullPointerException("Отсутствует информация о физическом лице");
                 PhysicalInfoEntity physicalInfo = mapper.map(dto.physicalInfo);
                 person.setPhysicalInfo(physicalInfo);
                 physicalInfo.setPerson(person);
                 physicalRepository.save(physicalInfo);
             }
+            case null -> throw new RuntimeException("Не выбран тип пользователя");
         }
         try {
             sendMail(dto.email, code);
@@ -98,8 +101,7 @@ public class AuthService {
             personRepository.findById(person.getId()).ifPresent( entity -> {
                 entity.setActive(false);
                 personRepository.save(entity);
-                }
-            );
+            });
         }
     }
 
