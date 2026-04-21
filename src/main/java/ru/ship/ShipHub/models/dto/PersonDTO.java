@@ -8,7 +8,7 @@ import ru.ship.ShipHub.util.PersonType;
 public class PersonDTO {
 
     @Null
-    private Integer id;
+    private Long id;
 
     @NotEmpty
     @Size(min = 2, max = 255, message = "Имя должно быть длинной от 2 до 255 символов")
@@ -33,7 +33,7 @@ public class PersonDTO {
         this.email = email;
     }
 
-    public PersonDTO(Integer id, String username, String email, String password) {
+    public PersonDTO(Long id, String username, String email, String password) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -41,11 +41,11 @@ public class PersonDTO {
 
     public PersonDTO(){}
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

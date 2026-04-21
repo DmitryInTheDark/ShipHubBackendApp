@@ -15,6 +15,7 @@ import ru.ship.ShipHub.models.dto.auth.VerifyCodeRequestDTO;
 import ru.ship.ShipHub.models.response.AuthResponse;
 import ru.ship.ShipHub.services.AuthService;
 import ru.ship.ShipHub.util.JWTUtil;
+import ru.ship.ShipHub.util.Mapper;
 
 import java.util.Map;
 
@@ -25,10 +26,12 @@ public class AuthController {
     private final AuthService service;
     private final Logger log;
     private final JWTUtil jwtUtil;
+    private final Mapper mapper;
 
-    public AuthController(AuthService service, JWTUtil jwtUtil) {
+    public AuthController(AuthService service, JWTUtil jwtUtil, Mapper mapper) {
         this.service = service;
         this.jwtUtil = jwtUtil;
+        this.mapper = mapper;
         this.log = LoggerFactory.getLogger(AuthController.class);
     }
 
@@ -36,10 +39,10 @@ public class AuthController {
     public AuthResponse login(
             @RequestBody @Valid LoginRequestDTO loginRequest
     ){
-        var person = service.login(loginRequest.email, loginRequest.password);
+        var user = service.login(loginRequest.email, loginRequest.password);
         return new AuthResponse(
-                jwtUtil.generateToken(person.getId(), person.getUsername()),
-                person
+                jwtUtil.generateToken(user.getId(), user.getUsername(), user.getType().toString()),
+                user
         );
     }
 

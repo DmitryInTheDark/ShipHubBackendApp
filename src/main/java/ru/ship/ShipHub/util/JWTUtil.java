@@ -4,15 +4,11 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.interfaces.Verification;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.time.temporal.TemporalUnit;
 import java.util.Date;
-import java.util.Objects;
 
 @Component
 public class JWTUtil {
@@ -23,19 +19,19 @@ public class JWTUtil {
         this.secret = secret;
     }
 
-    public String generateToken(Integer id, String username){
+    public String generateToken(Long id, String username, String role){
         Date expirationDate = Date.from(ZonedDateTime.now().plusMinutes(60).toInstant());
-
         return JWT.create()
                 .withExpiresAt(expirationDate)
                 .withSubject(id.toString())
                 .withClaim("username", username)
+                .withClaim("role", role)
                 .sign(Algorithm.HMAC256(secret));
     }
 
-    public Integer validateTokenAndGetPersonId(String token){
+    public Long validateTokenAndGetPersonId(String token){
         JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).build();
         DecodedJWT jwt = verifier.verify(token);
-        return Integer.parseInt(jwt.getSubject());
+        return Long.parseLong(jwt.getSubject());
     }
 }

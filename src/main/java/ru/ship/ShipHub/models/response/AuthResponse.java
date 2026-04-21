@@ -5,10 +5,10 @@ import ru.ship.ShipHub.models.dto.PersonDTO;
 public class AuthResponse {
 
     public String token;
-    public PersonDTO person;
+    public PersonDTO user;
 
-    public AuthResponse(String token, PersonDTO person){
+    public AuthResponse(String token, PersonDTO user){
         this.token = token;
-        this.person = person;
+        this.user = user;
     }
 }

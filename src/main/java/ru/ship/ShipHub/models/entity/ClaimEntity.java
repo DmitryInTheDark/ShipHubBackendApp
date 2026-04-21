@@ -1,6 +1,7 @@
 package ru.ship.ShipHub.models.entity;
 
 import jakarta.persistence.*;
+import ru.ship.ShipHub.util.ClaimStatus;
 import ru.ship.ShipHub.util.TestType;
 import java.time.LocalDateTime;
 
@@ -47,6 +48,16 @@ public class ClaimEntity {
     @JoinColumn(name = "equipment_id", referencedColumnName = "id")
     private EquipmentEntity equipment;
 
+    @ManyToOne(targetEntity = PersonEntity.class)
+    private PersonEntity whoCreate;
+
+    @Column(name = "status")
+    @Enumerated(value = EnumType.STRING)
+    private ClaimStatus status;
+
+    @Column(name = "last_update")
+    private String lastUpdate;
+
     public ClaimEntity() {}
 
     public ClaimEntity(
@@ -59,7 +70,10 @@ public class ClaimEntity {
             TestType testType,
             boolean isCustomType,
             String customTestName,
-            String additionalInfo
+            String additionalInfo,
+            PersonEntity whoCreate,
+            ClaimStatus status,
+            String lastUpdate
     ) {
         this.dateCreate = dateCreate;
         this.dateUpdate = dateUpdate;
@@ -71,6 +85,9 @@ public class ClaimEntity {
         this.isCustomType = isCustomType;
         this.customTestName = customTestName;
         this.additionalInfo = additionalInfo;
+        this.whoCreate = whoCreate;
+        this.status = status;
+        this.lastUpdate = lastUpdate;
     }
 
     public Long getId() {
@@ -167,5 +184,29 @@ public class ClaimEntity {
 
     public void setEquipment(EquipmentEntity equipment) {
         this.equipment = equipment;
+    }
+
+    public PersonEntity getWhoCreate() {
+        return whoCreate;
+    }
+
+    public void setWhoCreate(PersonEntity whoCreate) {
+        this.whoCreate = whoCreate;
+    }
+
+    public ClaimStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ClaimStatus status) {
+        this.status = status;
+    }
+
+    public String getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(String lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 }

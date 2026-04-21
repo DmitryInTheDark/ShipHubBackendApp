@@ -2,23 +2,25 @@ package ru.ship.ShipHub.services;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
+import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
 import ru.ship.ShipHub.models.entity.EquipmentEntity;
 import ru.ship.ShipHub.models.entity.EquipmentImageEntity;
 import ru.ship.ShipHub.repositories.*;
-import ru.ship.ShipHub.util.EquipmentType;
-import ru.ship.ShipHub.util.MailUtil;
-import ru.ship.ShipHub.util.Mapper;
-import ru.ship.ShipHub.util.TestType;
+import ru.ship.ShipHub.security.PersonDetails;
+import ru.ship.ShipHub.util.*;
 import ru.ship.ShipHub.util.exceptions.BadRequestException;
+import ru.ship.ShipHub.util.exceptions.ClaimNotFoundException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ClaimsService {
@@ -39,9 +41,11 @@ public class ClaimsService {
         this.personRepository = personRepository;
     }
 
+
     public ClaimDTO createClaim(
             List<MultipartFile> photos,
-            ClaimDTO dto
+            ClaimDTO dto,
+            @AuthenticationPrincipal PersonDetails personDetails
     ){
         ClaimEntity claim = mapper.map(dto);
         claim.setDateCreate(LocalDateTime.now());
@@ -62,18 +66,45 @@ public class ClaimsService {
                             EquipmentImageEntity photoEntity = new EquipmentImageEntity(
                                     file.getBytes(), claim.getEquipment(), "description"
                             );
-
                             equipmentImageRepository.save(photoEntity);
                         } catch (IOException e) {
                             log.error("Ошибка чтения файла: ", e);
                         }
                     }
                 });
+        claim.setWhoCreate(personDetails.getPerson());
+        claim.setStatus(ClaimStatus.CREATED);
         ClaimEntity savedClaim = claimRepository.save(claim);
         return mapper.map(savedClaim);
     }
 
-    public List<ClaimDTO> getAllClaims() {
-        return claimRepository.findAll().stream().map(mapper::map).toList();
+    public List<ClaimDTO> getAllClaims(
+            @AuthenticationPrincipal PersonDetails personDetails
+    ) {
+        boolean isManager = personDetails.getAuthorities().stream()
+                .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
+        if (isManager){
+            return claimRepository.findAll().stream().map(mapper::map).toList();
+        }else {
+            return claimRepository.findByWhoCreateId(personDetails.getPerson().getId())
+                    .stream()
+                    .map(mapper::map)
+                    .toList();
+        }
+    }
+
+    public List<ClaimDTO> getActiveClaims(PersonDetails personDetails) {
+        return claimRepository.findAll().stream()
+                .filter( claim ->
+                        claim.getStatus() != ClaimStatus.DOCUMENTS_DELIVERED
+                ).map(mapper::map).toList();
+    }
+
+    public ClaimDTO updateClaim(Long id, UpdateClaimDTO dto) {
+        var claimToUpdate = claimRepository.findById(id).orElseThrow(ClaimNotFoundException::new);
+        claimToUpdate.setStatus(dto.getStatus());
+        claimToUpdate.setDateUpdate(LocalDateTime.now());
+        claimToUpdate.setLastUpdate(dto.getUpdateInfo());
+        return mapper.map(claimRepository.save(claimToUpdate));
     }
 }

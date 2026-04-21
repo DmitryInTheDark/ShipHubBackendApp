@@ -5,6 +5,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.ship.ShipHub.models.entity.PersonEntity;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -51,4 +52,7 @@ public class PersonDetails implements UserDetails {
         return true;
     }
 
+    public PersonEntity getPerson(){
+        return person;
+    }
 }

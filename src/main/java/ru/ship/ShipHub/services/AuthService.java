@@ -15,6 +15,7 @@ import ru.ship.ShipHub.repositories.PersonRepository;
 import ru.ship.ShipHub.repositories.PhysicalRepository;
 import ru.ship.ShipHub.util.MailUtil;
 import ru.ship.ShipHub.util.Mapper;
+import ru.ship.ShipHub.util.exceptions.BadRequestException;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
 import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
 
@@ -32,7 +33,14 @@ public class AuthService {
     private final PhysicalRepository physicalRepository;
     private final PersonRepository personRepository;
 
-    public AuthService(Mapper mapper, MailUtil mailUtil, PasswordEncoder passwordEncoder, LegalInfoRepository legalInfoRepository, PhysicalRepository physicalRepository, PersonRepository personRepository) {
+    public AuthService(
+            Mapper mapper,
+            MailUtil mailUtil,
+            PasswordEncoder passwordEncoder,
+            LegalInfoRepository legalInfoRepository,
+            PhysicalRepository physicalRepository,
+            PersonRepository personRepository
+    ) {
         this.mapper = mapper;
         this.mailUtil = mailUtil;
         this.passwordEncoder = passwordEncoder;
@@ -76,24 +84,24 @@ public class AuthService {
                     dto.name, dto.email, passwordEncoder.encode(dto.password), false, code, dto.type
             );
         }
-        personRepository.save(person);
         switch (person.getType()){
             case LEGAL -> {
                 if (dto.legalInfo == null) throw new NullPointerException("Отсутствует информация о юридическом лице");
                 LegalInfoEntity legalInfo = mapper.map(dto.legalInfo);
                 person.setLegalInfo(legalInfo);
                 legalInfo.setPerson(person);
-                legalInfoRepository.save(legalInfo);
             }
             case PHYSICAL -> {
                 if (dto.physicalInfo == null) throw new NullPointerException("Отсутствует информация о физическом лице");
                 PhysicalInfoEntity physicalInfo = mapper.map(dto.physicalInfo);
                 person.setPhysicalInfo(physicalInfo);
                 physicalInfo.setPerson(person);
-                physicalRepository.save(physicalInfo);
             }
+            case MANAGER -> throw new BadRequestException("Невозможно зарегистрировать пользователя с этим типом");
             case null -> throw new RuntimeException("Не выбран тип пользователя");
+            default -> throw new BadRequestException("Неверный тип пользователя");
         }
+        personRepository.save(person);
         try {
             sendMail(dto.email, code);
         }catch (Exception e){

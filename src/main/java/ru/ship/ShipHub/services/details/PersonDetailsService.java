@@ -14,19 +14,19 @@ import java.util.NoSuchElementException;
 @Service
 public class PersonDetailsService implements UserDetailsService {
 
-    private final PersonRepository userRepository;
+    private final PersonRepository personRepository;
 
-    public PersonDetailsService(PersonRepository userRepository) {
-        this.userRepository = userRepository;
+    public PersonDetailsService(PersonRepository personRepository) {
+        this.personRepository = personRepository;
     }
 
     @Override
     public PersonDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
-        PersonEntity user = userRepository.findByUsername(username).orElseThrow(NoSuchElementException::new);
+        PersonEntity user = personRepository.findByUsername(username).orElseThrow(NoSuchElementException::new);
         return new PersonDetails(user);
     }
 
-    public PersonDetails loadById(Integer id) throws EntityNotFoundException {
-        return new PersonDetails(userRepository.findById(id).orElseThrow(EntityNotFoundException::new));
+    public PersonDetails loadById(Long id) throws EntityNotFoundException {
+        return new PersonDetails(personRepository.findById(id).orElseThrow(EntityNotFoundException::new));
     }
 }

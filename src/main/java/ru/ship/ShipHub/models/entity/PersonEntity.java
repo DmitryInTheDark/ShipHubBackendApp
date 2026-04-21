@@ -3,6 +3,8 @@ package ru.ship.ShipHub.models.entity;
 import jakarta.persistence.*;
 import ru.ship.ShipHub.util.PersonType;
 
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 public class PersonEntity {
@@ -10,7 +12,7 @@ public class PersonEntity {
     @Column(name = "id")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @Column(name = "username")
     private String username;
@@ -31,11 +33,17 @@ public class PersonEntity {
     @Enumerated(value = EnumType.STRING)
     private PersonType type;
 
-    @OneToOne(mappedBy = "person")
+    @OneToOne(mappedBy = "person", cascade = CascadeType.ALL)
     private LegalInfoEntity legalInfo;
 
-    @OneToOne(mappedBy = "person")
+    @OneToOne(mappedBy = "person", cascade = CascadeType.ALL)
     private PhysicalInfoEntity physicalInfo;
+
+    @OneToMany(
+            targetEntity = ClaimEntity.class,
+            mappedBy = "whoCreate"
+    )
+    private List<ClaimEntity> claims;
 
     public String getEmail() {
         return email;
@@ -76,11 +84,11 @@ public class PersonEntity {
         this.type = type;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -138,5 +146,13 @@ public class PersonEntity {
 
     public void setPhysicalInfo(PhysicalInfoEntity physicalInfo) {
         this.physicalInfo = physicalInfo;
+    }
+
+    public List<ClaimEntity> getClaims() {
+        return claims;
+    }
+
+    public void setClaims(List<ClaimEntity> claims) {
+        this.claims = claims;
     }
 }

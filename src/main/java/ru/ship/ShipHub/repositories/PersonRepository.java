@@ -8,7 +8,7 @@ import ru.ship.ShipHub.models.entity.PersonEntity;
 import java.util.Optional;
 
 @Repository
-public interface PersonRepository extends JpaRepository<PersonEntity, Integer> {
+public interface PersonRepository extends JpaRepository<PersonEntity, Long> {
 
     @EntityGraph(attributePaths = {"legalInfo", "physicalInfo"})
     Optional<PersonEntity> findByUsername(String username);

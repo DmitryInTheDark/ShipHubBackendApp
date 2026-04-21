@@ -11,4 +11,7 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @Override
     @EntityGraph(attributePaths = { "equipment" })
     List<ClaimEntity> findAll();
+
+    @EntityGraph(attributePaths = { "equipment" })
+    List<ClaimEntity> findByWhoCreateId(Long userId);
 }

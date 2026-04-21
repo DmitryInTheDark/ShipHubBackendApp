@@ -1,6 +1,8 @@
 package ru.ship.ShipHub.util;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.ship.ShipHub.models.dto.LegalInfoDTO;
@@ -13,6 +15,7 @@ import ru.ship.ShipHub.models.entity.*;
 @Component
 public class Mapper {
 
+    private static final Logger log = LoggerFactory.getLogger(Mapper.class);
     @Autowired
     private ModelMapper mapper;
 

@@ -1,6 +1,8 @@
 package ru.ship.ShipHub.models.dto.claim;
 
 import jakarta.validation.constraints.*;
+import ru.ship.ShipHub.models.dto.PersonDTO;
+import ru.ship.ShipHub.util.ClaimStatus;
 import ru.ship.ShipHub.util.TestType;
 
 import java.time.LocalDateTime;
@@ -34,11 +36,18 @@ public class ClaimDTO {
     @NotNull
     private EquipmentDTO equipment;
 
+    @Null
+    private PersonDTO whoCreate;
+
     private boolean isCustomType;
 
     private String customTestName;
 
     private String additionalInfo;
+
+    private ClaimStatus status;
+
+    private String lastUpdate;
 
     public ClaimDTO() {}
 
@@ -54,7 +63,9 @@ public class ClaimDTO {
             EquipmentDTO equipment,
             boolean isCustomType,
             String customTestName,
-            String additionalInfo
+            String additionalInfo,
+            ClaimStatus status,
+            String lastUpdate
     ) {
         this.dateCreate = dateCreate;
         this.id = id;
@@ -68,6 +79,8 @@ public class ClaimDTO {
         this.isCustomType = isCustomType;
         this.customTestName = customTestName;
         this.additionalInfo = additionalInfo;
+        this.status = status;
+        this.lastUpdate = lastUpdate;
     }
 
     public Long getId() {
@@ -164,5 +177,29 @@ public class ClaimDTO {
 
     public void setAdditionalInfo(String additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public PersonDTO getWhoCreate() {
+        return whoCreate;
+    }
+
+    public void setWhoCreate(PersonDTO whoCreate) {
+        this.whoCreate = whoCreate;
+    }
+
+    public ClaimStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ClaimStatus status) {
+        this.status = status;
+    }
+
+    public String getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(String lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 }

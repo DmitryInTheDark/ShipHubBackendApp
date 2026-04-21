@@ -3,6 +3,7 @@ package ru.ship.ShipHub.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
@@ -26,6 +27,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler
     public ResponseEntity<BaseExceptionResponseEntity> handlePersonIsExistException(PersonIsExistException e){
+        return response(
+                400,
+                e.getMessage(),
+                1
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<BaseExceptionResponseEntity> handleBadCredentialsException(BadCredentialsException e){
         return response(
                 400,
                 e.getMessage(),
