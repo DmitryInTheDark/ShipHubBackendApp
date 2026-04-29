@@ -3,6 +3,7 @@ package ru.ship.ShipHub.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,7 @@ public class MailUtil {
         this.log = LoggerFactory.getLogger(MailUtil.class);
     }
 
-    public void sendMessage(String receiver, String sender, String text){
+    public void sendMessage(String receiver, String sender, String text) throws MailSendException {
         log.info("Mail send");
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailAddress);

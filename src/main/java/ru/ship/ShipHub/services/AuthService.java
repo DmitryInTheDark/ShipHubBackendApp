@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
 import ru.ship.ShipHub.models.entity.LegalInfoEntity;
@@ -15,6 +16,7 @@ import ru.ship.ShipHub.repositories.PersonRepository;
 import ru.ship.ShipHub.repositories.PhysicalRepository;
 import ru.ship.ShipHub.util.MailUtil;
 import ru.ship.ShipHub.util.Mapper;
+import ru.ship.ShipHub.util.PersonType;
 import ru.ship.ShipHub.util.exceptions.BadRequestException;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
 import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
@@ -64,6 +66,7 @@ public class AuthService {
         return mapper.map(person);
     }
 
+    @Transactional
     public void registration(
             RegistrationRequestDTO dto
     ){
@@ -71,46 +74,16 @@ public class AuthService {
         personEntityOptional
                 .filter(PersonEntity::getActive)
                 .ifPresent(p -> { throw new PersonIsExistException("Пользователь с таким email уже существует"); });
+        PersonEntity personEntity;
+        personEntity = personEntityOptional.map(
+                person -> updateExistingNonActiveUser(dto, person.getId())
+        ).orElseGet(
+                () -> createUser(dto)
+        );
         var code = generateCode();
-        PersonEntity person;
-        if(personEntityOptional.isPresent()){
-            person = personEntityOptional.get();
-            person.setPassword(passwordEncoder.encode(dto.password));
-            person.setUsername(dto.name);
-            person.setType(dto.type);
-            person.setVerificationCode(code);
-        }else{
-            person = new PersonEntity(
-                    dto.name, dto.email, passwordEncoder.encode(dto.password), false, code, dto.type
-            );
-        }
-        switch (person.getType()){
-            case LEGAL -> {
-                if (dto.legalInfo == null) throw new NullPointerException("Отсутствует информация о юридическом лице");
-                LegalInfoEntity legalInfo = mapper.map(dto.legalInfo);
-                person.setLegalInfo(legalInfo);
-                legalInfo.setPerson(person);
-            }
-            case PHYSICAL -> {
-                if (dto.physicalInfo == null) throw new NullPointerException("Отсутствует информация о физическом лице");
-                PhysicalInfoEntity physicalInfo = mapper.map(dto.physicalInfo);
-                person.setPhysicalInfo(physicalInfo);
-                physicalInfo.setPerson(person);
-            }
-            case MANAGER -> throw new BadRequestException("Невозможно зарегистрировать пользователя с этим типом");
-            case null -> throw new RuntimeException("Не выбран тип пользователя");
-            default -> throw new BadRequestException("Неверный тип пользователя");
-        }
-        personRepository.save(person);
-        try {
-            sendMail(dto.email, code);
-        }catch (Exception e){
-            log.error("Mail send error", e);
-            personRepository.findById(person.getId()).ifPresent( entity -> {
-                entity.setActive(false);
-                personRepository.save(entity);
-            });
-        }
+        personEntity.setVerificationCode(code);
+        personRepository.save(personEntity);
+        sendMail(dto.email, code);
     }
 
     public PersonDTO verifyCode(String email, String code){
@@ -138,5 +111,58 @@ public class AuthService {
             code.append(chars.charAt((int) (Math.random() * (chars.length()))));
         }
         return code.toString();
+    }
+
+    private PersonEntity createUser(RegistrationRequestDTO dto){
+        return new PersonEntity(
+                dto.username,
+                dto.email,
+                passwordEncoder.encode(dto.password),
+                false,
+                null,
+                dto.type
+        );
+    }
+
+    private PersonEntity updateExistingNonActiveUser(RegistrationRequestDTO dto, Long userId){
+        PersonEntity person = personRepository.findById(userId).orElseThrow(PersonNotFoundException::new);
+        person.setUsername(dto.username);
+        person.setPassword(passwordEncoder.encode(dto.password));
+        person.setEmail(dto.email);
+        person.setActive(false);
+        LegalInfoEntity legalInfo = new LegalInfoEntity();
+        PhysicalInfoEntity physicalInfo = new PhysicalInfoEntity();
+        switch (dto.type){
+            case MANAGER -> throw new BadCredentialsException("Нельзя создать пользователя с таким типом");
+            case LEGAL -> {
+                legalInfo = mapper.map(dto.legalInfo);
+                if (person.getType() != PersonType.LEGAL){
+                    physicalRepository.delete(person.getPhysicalInfo());
+                    person.setPhysicalInfo(null);
+                    person.setType(PersonType.LEGAL);
+                }
+                person.setLegalInfo(legalInfo);
+            }
+            case PHYSICAL -> {
+                physicalInfo = mapper.map(dto.physicalInfo);
+                if (person.getType() != PersonType.PHYSICAL){
+                    legalInfoRepository.delete(person.getLegalInfo());
+                    person.setLegalInfo(null);
+                    person.setType(PersonType.PHYSICAL);
+                }
+                person.setPhysicalInfo(physicalInfo);
+            }
+            default -> throw new BadRequestException("Неверный тип пользователя");
+        }
+        var savedPerson = personRepository.save(person);
+        if (person.getType() == PersonType.LEGAL) {
+            legalInfo.setPerson(person);
+            legalInfoRepository.save(legalInfo);
+        }
+        if (person.getType() == PersonType.PHYSICAL) {
+            physicalInfo.setPerson(person);
+            physicalRepository.save(physicalInfo);
+        }
+        return savedPerson;
     }
 }

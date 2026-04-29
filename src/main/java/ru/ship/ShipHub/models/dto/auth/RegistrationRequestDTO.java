@@ -19,7 +19,7 @@ public class RegistrationRequestDTO {
 
     @NotEmpty
     @Size(min = 2, max = 100, message = "Имя должно быть длинной от 2 до 100 символов")
-    public String name;
+    public String username;
 
     @NotNull
     public PersonType type;

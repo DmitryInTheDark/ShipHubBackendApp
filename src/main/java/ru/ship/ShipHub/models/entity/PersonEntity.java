@@ -33,10 +33,10 @@ public class PersonEntity {
     @Enumerated(value = EnumType.STRING)
     private PersonType type;
 
-    @OneToOne(mappedBy = "person", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "person", orphanRemoval = true)
     private LegalInfoEntity legalInfo;
 
-    @OneToOne(mappedBy = "person", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "person", orphanRemoval = true)
     private PhysicalInfoEntity physicalInfo;
 
     @OneToMany(
