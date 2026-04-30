@@ -12,6 +12,8 @@ import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.EquipmentDTO;
 import ru.ship.ShipHub.models.entity.*;
 
+import java.util.Collections;
+
 @Component
 public class Mapper {
 
@@ -55,7 +57,22 @@ public class Mapper {
     }
 
     public ClaimDTO map(ClaimEntity entity){
-        return mapper.map(entity, ClaimDTO.class);
+        return new ClaimDTO(
+                entity.getDateCreate(),
+                entity.getId(),
+                entity.getOrganizationName(),
+                entity.getDateUpdate(),
+                entity.getContactPhone(),
+                entity.getClientName(),
+                entity.getEmail(),
+                entity.getTestType(),
+                map(entity.getEquipment()),
+                entity.isCustomType(),
+                entity.getCustomTestName(),
+                entity.getAdditionalInfo(),
+                entity.getStatus(),
+                entity.getLastUpdate()
+        );
     }
 
     public EquipmentDTO map(EquipmentEntity entity){
@@ -67,7 +84,8 @@ public class Mapper {
                 entity.getSerialNumber(),
                 entity.getCount(),
                 entity.getCustomType(),
-                entity.isCustomType()
+                entity.isCustomType(),
+                entity.getImages() != null ? entity.getImages().stream().map(EquipmentImageEntity::getId).toList() : Collections.emptyList()
         );
     }
 

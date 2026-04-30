@@ -6,6 +6,9 @@ import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Positive;
 import ru.ship.ShipHub.util.EquipmentType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class EquipmentDTO {
 
     @Null
@@ -26,6 +29,9 @@ public class EquipmentDTO {
     @Positive
     private int count;
 
+    @Null
+    private List<Long> imageIds = new ArrayList<>();
+
     private boolean isCustomType;
 
     private String customType;
@@ -39,7 +45,8 @@ public class EquipmentDTO {
             String serialNumber,
             int count,
             String customType,
-            boolean isCustomType
+            boolean isCustomType,
+            List<Long> imageIds
     ) {
         this.id = id;
         this.equipmentType = equipmentType;
@@ -49,6 +56,7 @@ public class EquipmentDTO {
         this.count = count;
         this.customType = customType;
         this.isCustomType = isCustomType;
+        this.imageIds = imageIds;
     }
 
     public EquipmentType getEquipmentType() {
@@ -113,5 +121,13 @@ public class EquipmentDTO {
 
     public void setCustomType(boolean customType) {
         isCustomType = customType;
+    }
+
+    public List<Long> getImageIds() {
+        return imageIds;
+    }
+
+    public void setImageIds(List<Long> imageIds) {
+        this.imageIds = imageIds;
     }
 }

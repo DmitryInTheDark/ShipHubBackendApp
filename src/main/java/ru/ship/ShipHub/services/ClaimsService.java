@@ -1,5 +1,6 @@
 package ru.ship.ShipHub.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,31 +20,36 @@ import ru.ship.ShipHub.util.exceptions.ClaimNotFoundException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class ClaimsService {
 
     private final Mapper mapper;
     private final Logger log;
-    private final PersonRepository personRepository;
     private final ClaimRepository claimRepository;
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
 
-    public ClaimsService(Mapper mapper, MailUtil mailUtil, PasswordEncoder passwordEncoder, LegalInfoRepository legalInfoRepository, PhysicalRepository physicalRepository, PersonRepository personRepository, ClaimRepository claimRepository, EquipmentRepository equipmentRepository, EquipmentImageRepository equipmentImageRepository) {
+    public ClaimsService(
+            Mapper mapper,
+            MailUtil mailUtil,
+            PasswordEncoder passwordEncoder,
+            LegalInfoRepository legalInfoRepository,
+            PhysicalRepository physicalRepository,
+            ClaimRepository claimRepository,
+            EquipmentRepository equipmentRepository,
+            EquipmentImageRepository equipmentImageRepository
+    ) {
         this.mapper = mapper;
         this.claimRepository = claimRepository;
         this.equipmentRepository = equipmentRepository;
         this.equipmentImageRepository = equipmentImageRepository;
         this.log = LoggerFactory.getLogger(AuthService.class);
-        this.personRepository = personRepository;
     }
 
 
     public ClaimDTO createClaim(
-            List<MultipartFile> photos,
             ClaimDTO dto,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
@@ -58,24 +64,44 @@ public class ClaimsService {
         if (claim.getEquipment().isCustomType() && claim.getEquipment().getEquipmentType() != EquipmentType.OTHER) {
             throw new BadRequestException("Оборудование с нестандартным типом не может содержать другой тип оборудования");
         }
-        photos.stream()
-                .filter(file -> !file.isEmpty())
-                .forEach(file -> {
-                    if (!file.isEmpty()){
-                        try {
-                            EquipmentImageEntity photoEntity = new EquipmentImageEntity(
-                                    file.getBytes(), claim.getEquipment(), "description"
-                            );
-                            equipmentImageRepository.save(photoEntity);
-                        } catch (IOException e) {
-                            log.error("Ошибка чтения файла: ", e);
-                        }
-                    }
-                });
         claim.setWhoCreate(personDetails.getPerson());
         claim.setStatus(ClaimStatus.CREATED);
         ClaimEntity savedClaim = claimRepository.save(claim);
         return mapper.map(savedClaim);
+    }
+
+    public Map<Integer, String> attachPhotos(
+            Long claimId,
+            MultipartFile photo1,
+            MultipartFile photo2,
+            MultipartFile photo3
+    ){
+        var photos = List.of(photo1, photo2, photo3);
+        var equipment = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка с таким id не найдена"))
+                .getEquipment();
+        var problemPhotos = new HashMap<Integer, String>(Collections.emptyMap());
+        var index = 0;
+        var notEmptyPhotos = photos.stream()
+                .filter(file -> !file.isEmpty()).toList();
+        if (equipment.getImages().size() + notEmptyPhotos.size() > 3) {
+            throw new BadRequestException(
+                    "К одной заявке нельзя прикрепить больше трёх фото. Текущее количество фото: " + equipment.getImages().size()
+            );
+        }
+        for (int i = 0; i < notEmptyPhotos.size(); i++){
+            var photo = notEmptyPhotos.get(i);
+            try {
+                EquipmentImageEntity photoEntity = new EquipmentImageEntity(
+                        photo.getBytes(), equipment, "description", photo.getContentType()
+                );
+                equipmentImageRepository.save(photoEntity);
+            } catch (IOException e) {
+                log.error("Ошибка чтения файла: ", e);
+                problemPhotos.put(i+1, "Файл не удалось прочитать");
+            }
+            index = index + 1;
+        }
+        return problemPhotos;
     }
 
     public List<ClaimDTO> getAllClaims(
@@ -91,6 +117,11 @@ public class ClaimsService {
                     .map(mapper::map)
                     .toList();
         }
+    }
+
+    public ClaimDTO getClaimById(Long id){
+        var claimEntity = claimRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+        return mapper.map(claimEntity);
     }
 
     public List<ClaimDTO> getActiveClaims(PersonDetails personDetails) {

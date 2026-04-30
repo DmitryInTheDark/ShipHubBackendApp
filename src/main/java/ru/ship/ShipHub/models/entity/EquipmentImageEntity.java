@@ -20,12 +20,16 @@ public class EquipmentImageEntity {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "content_type")
+    private String contentType;
+
     public EquipmentImageEntity() {}
 
-    public EquipmentImageEntity(byte[] bytes, EquipmentEntity equipment, String description) {
+    public EquipmentImageEntity(byte[] bytes, EquipmentEntity equipment, String description, String contentType) {
         this.bytes = bytes;
         this.equipment = equipment;
         this.description = description;
+        this.contentType = contentType;
     }
 
     public Long getId() {
@@ -58,5 +62,13 @@ public class EquipmentImageEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 }

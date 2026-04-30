@@ -1,5 +1,6 @@
 package ru.ship.ShipHub.util;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -75,6 +76,15 @@ public class GlobalExceptionHandler {
         return response(
                 400,
                 e.getMessage() != null ? e.getLocalizedMessage() : "Пользователь с такими данными не найден",
+                1
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<BaseExceptionResponseEntity> handleEntityNotFoundException(EntityNotFoundException e){
+        return response(
+                400,
+                e.getMessage() != null ? e.getLocalizedMessage() : "сущность не найдена",
                 1
         );
     }
