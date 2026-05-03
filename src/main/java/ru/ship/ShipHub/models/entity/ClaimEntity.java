@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import ru.ship.ShipHub.util.ClaimStatus;
 import ru.ship.ShipHub.util.TestType;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "claims")
@@ -57,6 +58,12 @@ public class ClaimEntity {
 
     @Column(name = "last_update")
     private String lastUpdate;
+
+    @OneToMany(
+            targetEntity = MessageEntity.class,
+            mappedBy = "claim"
+    )
+    private List<MessageEntity> messages;
 
     public ClaimEntity() {}
 

@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.repositories.PersonRepository;
-import ru.ship.ShipHub.security.PersonDetails;
+import ru.ship.ShipHub.config.security.PersonDetails;
 
 import java.util.NoSuchElementException;
 

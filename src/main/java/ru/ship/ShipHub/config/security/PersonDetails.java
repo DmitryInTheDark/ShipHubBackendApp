@@ -1,4 +1,4 @@
-package ru.ship.ShipHub.security;
+package ru.ship.ShipHub.config.security;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;

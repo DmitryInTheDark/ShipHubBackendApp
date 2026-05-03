@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_outer_classname = "ClaimMessageService";
+option java_package = "ru.ship.ShipHub";
+
+service ChatService{
+  rpc Chat (stream MessageRequest) returns (stream Message);
+}
+
+message MessageRequest{
+  bool isSubscribeRequest = 1;
+  int64 userId = 2;
+  int64 claimId = 3;
+  string content = 4;
+}
+
+message Message{
+  string content = 1;
+}

@@ -3,14 +3,14 @@ package ru.ship.ShipHub.models.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "claim_images")
+@Table(name = "equipment_images")
 public class EquipmentImageEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
+    @Column(columnDefinition = "bytea")
     private byte[] bytes;
 
     @ManyToOne

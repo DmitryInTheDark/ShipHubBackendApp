@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.repositories.PersonRepository;
-import ru.ship.ShipHub.security.PersonDetails;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
 
 import java.io.IOException;

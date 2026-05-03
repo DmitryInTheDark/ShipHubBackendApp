@@ -10,10 +10,10 @@ import java.util.Optional;
 public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
 
     @Override
-    @EntityGraph(attributePaths = { "equipment" })
+    @EntityGraph(attributePaths = { "equipment", "equipment.images" })
     List<ClaimEntity> findAll();
 
-    @EntityGraph(attributePaths = { "equipment" })
+    @EntityGraph(attributePaths = { "equipment", "equipment.images" })
     List<ClaimEntity> findByWhoCreateId(Long userId);
 
     @Override

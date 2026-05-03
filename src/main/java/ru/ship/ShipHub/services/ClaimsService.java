@@ -13,7 +13,7 @@ import ru.ship.ShipHub.models.entity.ClaimEntity;
 import ru.ship.ShipHub.models.entity.EquipmentEntity;
 import ru.ship.ShipHub.models.entity.EquipmentImageEntity;
 import ru.ship.ShipHub.repositories.*;
-import ru.ship.ShipHub.security.PersonDetails;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.util.*;
 import ru.ship.ShipHub.util.exceptions.BadRequestException;
 import ru.ship.ShipHub.util.exceptions.ClaimNotFoundException;
@@ -21,6 +21,7 @@ import ru.ship.ShipHub.util.exceptions.ClaimNotFoundException;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 public class ClaimsService {
@@ -76,7 +77,9 @@ public class ClaimsService {
             MultipartFile photo2,
             MultipartFile photo3
     ){
-        var photos = List.of(photo1, photo2, photo3);
+        var photos = Stream.of(photo1, photo2, photo3)
+                .filter(Objects::nonNull)
+                .toList();
         var equipment = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка с таким id не найдена"))
                 .getEquipment();
         var problemPhotos = new HashMap<Integer, String>(Collections.emptyMap());

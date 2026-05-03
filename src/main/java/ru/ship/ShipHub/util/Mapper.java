@@ -10,6 +10,7 @@ import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.PhysicalInfoDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.EquipmentDTO;
+import ru.ship.ShipHub.models.dto.claim.MessageDTO;
 import ru.ship.ShipHub.models.entity.*;
 
 import java.util.Collections;
@@ -103,12 +104,11 @@ public class Mapper {
         return e;
     }
 
-//    public EquipmentImageEntity map(ClaimEntity entity){
-//        return mapper.map(entity, ClaimDTO.class);
-//    }
-//
-//    public ClaimDTO map(ClaimEntity entity){
-//        return mapper.map(entity, ClaimDTO.class);
-//    }
+    public MessageDTO map(MessageEntity entity){
+        return new MessageDTO(
+                entity.getText(),
+                entity.getDateCreated()
+        );
+    }
 
 }
