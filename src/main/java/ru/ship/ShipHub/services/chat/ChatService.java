@@ -4,9 +4,11 @@ import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.ship.ShipHub.ChatServiceGrpc;
 import ru.ship.ShipHub.ClaimMessageService;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.repositories.ClaimRepository;
 import ru.ship.ShipHub.util.exceptions.BadRequestException;
 
@@ -28,28 +30,34 @@ public class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
     @Override
     public StreamObserver<ClaimMessageService.MessageRequest> chat(StreamObserver<ClaimMessageService.Message> responseObserver) {
         return new StreamObserver<>() {
+
+            Long userId;
+            Long claimId;
+
             @Override
             public void onNext(ClaimMessageService.MessageRequest request) {
+                var userDetails = (PersonDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                userId = userDetails.getPerson().getId();
+                var claimOptional = claimRepository.findById(request.getClaimId());
+                if (claimOptional.isEmpty()){
+                    onError(new Throwable("Заявка с таким id не найдена"));
+                    return;
+                }
+                claimId = claimOptional.get().getId();
                 if (request.getIsSubscribeRequest()){
-                    var claimOptional = claimRepository.findById(request.getClaimId());
-                    if (claimOptional.isEmpty()){
-                        onError(new Throwable("Заявка с таким id не найдена"));
-                        return;
-                    }
-                    var claim = claimOptional.get();
-                    var subscribe = subscribers.get(claim.getId());
-                    if (subscribe != null && subscribe.containsKey(request.getUserId())) {
+                    var subscribe = subscribers.get(claimId);
+                    if (subscribe != null && subscribe.containsKey(userId)) {
                         onError(new Throwable("Пользователь уже подписан на этот чат"));
                     }
                     else {
                         var newSubscribe = new HashMap<Long, StreamObserver<ClaimMessageService.Message>>();
-                        newSubscribe.put(request.getUserId(), responseObserver);
-                        var currentSubscribe = subscribers.get(claim.getId());
+                        newSubscribe.put(userId, responseObserver);
+                        var currentSubscribe = subscribers.get(claimId);
                         if (currentSubscribe != null){
-                            currentSubscribe.put(request.getUserId(), responseObserver);
-                            subscribers.put(claim.getId(), currentSubscribe);
+                            currentSubscribe.put(userId, responseObserver);
+                            subscribers.put(claimId, currentSubscribe);
                         }else{
-                            subscribers.put(claim.getId(), newSubscribe);
+                            subscribers.put(claimId, newSubscribe);
                         }
                         var response = ClaimMessageService.Message.newBuilder()
                                 .setContent("Success")
@@ -61,7 +69,7 @@ public class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
                     var message = ClaimMessageService.Message.newBuilder()
                             .setContent(request.getContent())
                             .build();
-                    broadcastMessage(message, request.getClaimId(), request.getUserId());
+                    broadcastMessage(message, claimId, userId);
                 }
             }
 
@@ -75,7 +83,7 @@ public class ChatService extends ChatServiceGrpc.ChatServiceImplBase {
 
             @Override
             public void onCompleted() {
-
+                subscribers.get(claimId).remove(userId);
             }
         };
     }

@@ -9,7 +9,6 @@ service ChatService{
 
 message MessageRequest{
   bool isSubscribeRequest = 1;
-  int64 userId = 2;
   int64 claimId = 3;
   string content = 4;
 }
