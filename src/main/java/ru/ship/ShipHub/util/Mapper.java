@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.ship.ShipHub.models.dto.DocumentDTO;
-import ru.ship.ShipHub.models.dto.LegalInfoDTO;
-import ru.ship.ShipHub.models.dto.PersonDTO;
-import ru.ship.ShipHub.models.dto.PhysicalInfoDTO;
+import ru.ship.ShipHub.models.dto.*;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.EquipmentDTO;
 import ru.ship.ShipHub.models.dto.claim.MessageDTO;
@@ -124,6 +121,15 @@ public class Mapper {
 //        );
 //    }
 
+        public DocumentInfoDTO mapDocumentInfo(DocumentEntity entity) {
+            return new DocumentInfoDTO(
+                    entity.getName(),
+                    entity.getType(),
+                    entity.getContentType(),
+                    entity.getDateCreate()
+            );
+        }
+
         public DocumentDTO map(DocumentEntity entity){
         return new DocumentDTO(
                 entity.getName(),
@@ -133,5 +139,4 @@ public class Mapper {
                 entity.getDateCreate()
         );
     }
-
 }

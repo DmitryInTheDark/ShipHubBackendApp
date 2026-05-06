@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.ship.ShipHub.models.dto.DocumentDTO;
+import ru.ship.ShipHub.models.dto.DocumentInfoDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
@@ -163,7 +165,6 @@ public class ClaimsService {
     public boolean attachDocument(
             Long claimId,
             MultipartFile document,
-            String documentName,
             String documentType
     ) {
         var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
@@ -180,7 +181,7 @@ public class ClaimsService {
             documentEntity = new DocumentEntity(
                     document.getBytes(),
                     document.getContentType(),
-                    documentName,
+                    document.getOriginalFilename(),
                     type,
                     LocalDateTime.now(),
                     claim
@@ -191,5 +192,15 @@ public class ClaimsService {
         }
         documentRepository.save(documentEntity);
         return true;
+    }
+
+    public DocumentInfoDTO getDocumentInfoById(Long id) {
+        var entity = documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
+        return mapper.mapDocumentInfo(entity);
+    }
+
+    public DocumentDTO getDocument(Long id){
+        var entity = documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
+        return mapper.map(entity);
     }
 }

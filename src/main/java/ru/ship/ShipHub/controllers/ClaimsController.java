@@ -1,6 +1,7 @@
 package ru.ship.ShipHub.controllers;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -8,10 +9,17 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.config.security.PersonDetails;
+import ru.ship.ShipHub.models.dto.DocumentDTO;
+import ru.ship.ShipHub.models.dto.DocumentInfoDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.services.ClaimsService;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,12 +109,34 @@ public class ClaimsController {
     public ResponseEntity attachDocument(
             @PathVariable("id") Long documentId,
             @RequestPart MultipartFile document,
-            @RequestParam("document_name") String documentName,
             @RequestParam("document_type") String documentType
     ){
-        var result = claimsService.attachDocument(documentId, document, documentName, documentType);
+        var result = claimsService.attachDocument(documentId, document, documentType);
         if (result) return ResponseEntity.status(201).build();
         else return ResponseEntity.status(400).body(Map.of("error", "Не удалось загрузить файл"));
+    }
+    
+    @GetMapping("/documents/{id}")
+    public DocumentInfoDTO getDocumentInfoById(
+            @PathVariable("id") Long id
+    ){
+        return claimsService.getDocumentInfoById(id);
+    }
+
+    @GetMapping("/documents/{id}/file")
+    public ResponseEntity<byte[]> getDocumentAsFileById(
+            @PathVariable("id") Long id
+    ){
+        var document = claimsService.getDocument(id);
+
+        String encodedFileName = URLEncoder.encode(document.getName(), StandardCharsets.UTF_8)
+                .replaceAll("\\+", "%20");
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(document.getContentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + encodedFileName + "\"")
+                .body(document.getBytes());
     }
 
 }
