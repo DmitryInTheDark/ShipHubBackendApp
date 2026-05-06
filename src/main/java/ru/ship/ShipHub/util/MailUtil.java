@@ -27,6 +27,7 @@ public class MailUtil {
         message.setFrom(mailAddress);
         message.setTo(receiver);
 //        message.setSubject(sender);
+        message.setFrom(sender);
         message.setText(text);
         mailSender.send(message);
     }

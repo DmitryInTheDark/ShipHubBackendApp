@@ -6,6 +6,7 @@ import ru.ship.ShipHub.util.ClaimStatus;
 import ru.ship.ShipHub.util.TestType;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 public class ClaimDTO {
 
@@ -49,6 +50,8 @@ public class ClaimDTO {
 
     private String lastUpdate;
 
+    private Set<Long> documentsIds;
+
     public ClaimDTO() {}
 
     public ClaimDTO(
@@ -65,7 +68,8 @@ public class ClaimDTO {
             String customTestName,
             String additionalInfo,
             ClaimStatus status,
-            String lastUpdate
+            String lastUpdate,
+            Set<Long> documentsIds
     ) {
         this.dateCreate = dateCreate;
         this.id = id;
@@ -81,6 +85,7 @@ public class ClaimDTO {
         this.additionalInfo = additionalInfo;
         this.status = status;
         this.lastUpdate = lastUpdate;
+        this.documentsIds = documentsIds;
     }
 
     public Long getId() {
@@ -201,5 +206,13 @@ public class ClaimDTO {
 
     public void setLastUpdate(String lastUpdate) {
         this.lastUpdate = lastUpdate;
+    }
+
+    public Set<Long> getDocumentsIds() {
+        return documentsIds;
+    }
+
+    public void setDocumentsIds(Set<Long> documentsIds) {
+        this.documentsIds = documentsIds;
     }
 }

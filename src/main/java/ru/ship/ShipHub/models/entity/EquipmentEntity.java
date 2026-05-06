@@ -3,7 +3,7 @@ package ru.ship.ShipHub.models.entity;
 import jakarta.persistence.*;
 import ru.ship.ShipHub.util.EquipmentType;
 
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "equipments")
@@ -30,7 +30,7 @@ public class EquipmentEntity {
             targetEntity = EquipmentImageEntity.class,
             mappedBy = "equipment"
     )
-    private List<EquipmentImageEntity> images;
+    private Set<EquipmentImageEntity> images;
 
     @Column(name = "count")
     private int count;
@@ -53,7 +53,7 @@ public class EquipmentEntity {
             String name,
             String manufacturer,
             String serialNumber,
-            List<EquipmentImageEntity> images,
+            Set<EquipmentImageEntity> images,
             int count,
             boolean isCustomType,
             String customType,
@@ -110,11 +110,11 @@ public class EquipmentEntity {
         this.serialNumber = serialNumber;
     }
 
-    public List<EquipmentImageEntity> getImages() {
+    public Set<EquipmentImageEntity> getImages() {
         return images;
     }
 
-    public void setImages(List<EquipmentImageEntity> images) {
+    public void setImages(Set<EquipmentImageEntity> images) {
         this.images = images;
     }
 

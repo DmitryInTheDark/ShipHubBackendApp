@@ -3,8 +3,10 @@ package ru.ship.ShipHub.models.entity;
 import jakarta.persistence.*;
 import ru.ship.ShipHub.util.ClaimStatus;
 import ru.ship.ShipHub.util.TestType;
+
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "claims")
@@ -65,6 +67,12 @@ public class ClaimEntity {
     )
     private List<MessageEntity> messages;
 
+    @OneToMany(
+            targetEntity = DocumentEntity.class,
+            mappedBy = "claim"
+    )
+    private Set<DocumentEntity> documentsIds;
+
     public ClaimEntity() {}
 
     public ClaimEntity(
@@ -80,7 +88,8 @@ public class ClaimEntity {
             String additionalInfo,
             PersonEntity whoCreate,
             ClaimStatus status,
-            String lastUpdate
+            String lastUpdate,
+            Set<DocumentEntity> documentsIds
     ) {
         this.dateCreate = dateCreate;
         this.dateUpdate = dateUpdate;
@@ -95,6 +104,7 @@ public class ClaimEntity {
         this.whoCreate = whoCreate;
         this.status = status;
         this.lastUpdate = lastUpdate;
+        this.documentsIds = documentsIds;
     }
 
     public Long getId() {
@@ -215,5 +225,21 @@ public class ClaimEntity {
 
     public void setLastUpdate(String lastUpdate) {
         this.lastUpdate = lastUpdate;
+    }
+
+    public List<MessageEntity> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<MessageEntity> messages) {
+        this.messages = messages;
+    }
+
+    public Set<DocumentEntity> getDocuments() {
+        return documentsIds;
+    }
+
+    public void setDocuments(Set<DocumentEntity> documents) {
+        this.documentsIds = documents;
     }
 }

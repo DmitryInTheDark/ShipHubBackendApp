@@ -1,14 +1,15 @@
 package ru.ship.ShipHub.controllers;
 
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
-import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.services.ClaimsService;
 
 import java.util.ArrayList;
@@ -84,6 +85,28 @@ public class ClaimsController {
             @RequestBody UpdateClaimDTO dto
     ){
         return claimsService.updateClaim(id, dto);
+    }
+
+    @GetMapping(value = "photo/{id}")
+    public ResponseEntity<byte[]> getPhotoById(
+            @PathVariable("id") Long id
+    ){
+        var photo = claimsService.getPhotoById(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(photo.getContentType()))
+                .body(photo.getBytes());
+    }
+
+    @PostMapping("/{id}/attach_document")
+    public ResponseEntity attachDocument(
+            @PathVariable("id") Long documentId,
+            @RequestPart MultipartFile document,
+            @RequestParam("document_name") String documentName,
+            @RequestParam("document_type") String documentType
+    ){
+        var result = claimsService.attachDocument(documentId, document, documentName, documentType);
+        if (result) return ResponseEntity.status(201).build();
+        else return ResponseEntity.status(400).body(Map.of("error", "Не удалось загрузить файл"));
     }
 
 }

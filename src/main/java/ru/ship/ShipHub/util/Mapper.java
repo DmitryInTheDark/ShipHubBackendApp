@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.ship.ShipHub.models.dto.DocumentDTO;
 import ru.ship.ShipHub.models.dto.LegalInfoDTO;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.PhysicalInfoDTO;
@@ -14,6 +15,7 @@ import ru.ship.ShipHub.models.dto.claim.MessageDTO;
 import ru.ship.ShipHub.models.entity.*;
 
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 @Component
 public class Mapper {
@@ -72,7 +74,8 @@ public class Mapper {
                 entity.getCustomTestName(),
                 entity.getAdditionalInfo(),
                 entity.getStatus(),
-                entity.getLastUpdate()
+                entity.getLastUpdate(),
+                entity.getDocuments().stream().map(DocumentEntity::getId).collect(Collectors.toSet())
         );
     }
 
@@ -86,7 +89,7 @@ public class Mapper {
                 entity.getCount(),
                 entity.getCustomType(),
                 entity.isCustomType(),
-                entity.getImages() != null ? entity.getImages().stream().map(EquipmentImageEntity::getId).toList() : Collections.emptyList()
+                entity.getImages() != null ? entity.getImages().stream().map(EquipmentImageEntity::getId).collect(Collectors.toSet()) : Collections.emptySet()
         );
     }
 
@@ -108,6 +111,26 @@ public class Mapper {
         return new MessageDTO(
                 entity.getText(),
                 entity.getDateCreated()
+        );
+    }
+
+//    public DocumentEntity map(DocumentDTO dto, String contentType){
+//        return new DocumentEntity(
+//                dto.getBytes(),
+//                contentType,
+//                dto.getName(),
+//                dto.getType(),
+//                dto.getDateCreate()
+//        );
+//    }
+
+        public DocumentDTO map(DocumentEntity entity){
+        return new DocumentDTO(
+                entity.getName(),
+                entity.getBytes(),
+                entity.getType(),
+                entity.getContentType(),
+                entity.getDateCreate()
         );
     }
 

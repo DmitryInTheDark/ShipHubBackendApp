@@ -6,8 +6,7 @@ import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Positive;
 import ru.ship.ShipHub.util.EquipmentType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 public class EquipmentDTO {
 
@@ -30,7 +29,7 @@ public class EquipmentDTO {
     private int count;
 
     @Null
-    private List<Long> imageIds = new ArrayList<>();
+    private Set<Long> imageIds;
 
     private boolean isCustomType;
 
@@ -46,7 +45,7 @@ public class EquipmentDTO {
             int count,
             String customType,
             boolean isCustomType,
-            List<Long> imageIds
+            Set<Long> imageIds
     ) {
         this.id = id;
         this.equipmentType = equipmentType;
@@ -123,11 +122,11 @@ public class EquipmentDTO {
         isCustomType = customType;
     }
 
-    public List<Long> getImageIds() {
+    public Set<Long> getImageIds() {
         return imageIds;
     }
 
-    public void setImageIds(List<Long> imageIds) {
+    public void setImageIds(Set<Long> imageIds) {
         this.imageIds = imageIds;
     }
 }

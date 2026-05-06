@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
+import ru.ship.ShipHub.models.entity.DocumentEntity;
 import ru.ship.ShipHub.models.entity.EquipmentEntity;
 import ru.ship.ShipHub.models.entity.EquipmentImageEntity;
 import ru.ship.ShipHub.repositories.*;
@@ -31,6 +33,15 @@ public class ClaimsService {
     private final ClaimRepository claimRepository;
     private final EquipmentRepository equipmentRepository;
     private final EquipmentImageRepository equipmentImageRepository;
+    private final DocumentRepository documentRepository;
+    private final EquipmentImageRepository imageRepository;
+
+    final static List<String> allowedContentTypes = new ArrayList<>(
+            List.of(
+                "application/pdf",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+    );
 
     public ClaimsService(
             Mapper mapper,
@@ -40,12 +51,14 @@ public class ClaimsService {
             PhysicalRepository physicalRepository,
             ClaimRepository claimRepository,
             EquipmentRepository equipmentRepository,
-            EquipmentImageRepository equipmentImageRepository
+            EquipmentImageRepository equipmentImageRepository, DocumentRepository documentRepository, EquipmentImageRepository imageRepository
     ) {
         this.mapper = mapper;
         this.claimRepository = claimRepository;
         this.equipmentRepository = equipmentRepository;
         this.equipmentImageRepository = equipmentImageRepository;
+        this.documentRepository = documentRepository;
+        this.imageRepository = imageRepository;
         this.log = LoggerFactory.getLogger(AuthService.class);
     }
 
@@ -107,6 +120,7 @@ public class ClaimsService {
         return problemPhotos;
     }
 
+    @Transactional
     public List<ClaimDTO> getAllClaims(
             @AuthenticationPrincipal PersonDetails personDetails
     ) {
@@ -140,5 +154,42 @@ public class ClaimsService {
         claimToUpdate.setDateUpdate(LocalDateTime.now());
         claimToUpdate.setLastUpdate(dto.getUpdateInfo());
         return mapper.map(claimRepository.save(claimToUpdate));
+    }
+
+    public EquipmentImageEntity getPhotoById(Long id){
+        return imageRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Фото не найдено"));
+    }
+
+    public boolean attachDocument(
+            Long claimId,
+            MultipartFile document,
+            String documentName,
+            String documentType
+    ) {
+        var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+        if (document.isEmpty()) throw new BadRequestException("Файл пустой");
+        if (!allowedContentTypes.contains(document.getContentType())) throw new BadRequestException("Формат файла не поддерживается");
+        DocumentType type;
+        try{
+            type = DocumentType.valueOf(documentType.toUpperCase());
+        }catch (IllegalArgumentException e){
+            throw new BadRequestException("Некоректный тип документа");
+        }
+        DocumentEntity documentEntity;
+        try{
+            documentEntity = new DocumentEntity(
+                    document.getBytes(),
+                    document.getContentType(),
+                    documentName,
+                    type,
+                    LocalDateTime.now(),
+                    claim
+            );
+        }catch (IOException e){
+            log.error(e.getMessage());
+            return false;
+        }
+        documentRepository.save(documentEntity);
+        return true;
     }
 }
