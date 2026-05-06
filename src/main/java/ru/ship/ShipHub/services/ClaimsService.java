@@ -3,6 +3,8 @@ package ru.ship.ShipHub.services;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -124,14 +126,17 @@ public class ClaimsService {
 
     @Transactional
     public List<ClaimDTO> getAllClaims(
-            @AuthenticationPrincipal PersonDetails personDetails
+            int pageNumber,
+            int pageSize,
+            PersonDetails personDetails
     ) {
         boolean isManager = personDetails.getAuthorities().stream()
                 .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
+        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
         if (isManager){
-            return claimRepository.findAll().stream().map(mapper::map).toList();
+            return claimRepository.findAll(pageRequest).stream().map(mapper::map).toList();
         }else {
-            return claimRepository.findByWhoCreateId(personDetails.getPerson().getId())
+            return claimRepository.findByWhoCreateId(personDetails.getPerson().getId(), pageRequest)
                     .stream()
                     .map(mapper::map)
                     .toList();

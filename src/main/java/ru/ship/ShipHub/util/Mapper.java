@@ -72,7 +72,7 @@ public class Mapper {
                 entity.getAdditionalInfo(),
                 entity.getStatus(),
                 entity.getLastUpdate(),
-                entity.getDocuments().stream().map(DocumentEntity::getId).collect(Collectors.toSet())
+                entity.getDocuments() != null ? entity.getDocuments().stream().map(DocumentEntity::getId).collect(Collectors.toSet()) : Collections.emptySet()
         );
     }
 

@@ -1,5 +1,7 @@
 package ru.ship.ShipHub.repositories;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
@@ -13,8 +15,15 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     List<ClaimEntity> findAll();
 
+    @Override
+    @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
+    Page<ClaimEntity> findAll(Pageable pageable);
+
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     List<ClaimEntity> findByWhoCreateId(Long userId);
+
+    @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
+    Page<ClaimEntity> findByWhoCreateId(Long userId, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
