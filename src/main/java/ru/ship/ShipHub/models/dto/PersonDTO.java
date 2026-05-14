@@ -25,6 +25,17 @@ public class PersonDTO {
 
     private PhysicalInfoDTO physicalInfo;
 
+    public PersonDTO(){}
+
+    public PersonDTO(Long id, String username, String email, PersonType type, LegalInfoDTO legalInfo, PhysicalInfoDTO physicalInfo) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.type = type;
+        this.legalInfo = legalInfo;
+        this.physicalInfo = physicalInfo;
+    }
+
     public String getEmail() {
         return email;
     }
@@ -32,14 +43,6 @@ public class PersonDTO {
     public void setEmail(String email) {
         this.email = email;
     }
-
-    public PersonDTO(Long id, String username, String email, String password) {
-        this.id = id;
-        this.username = username;
-        this.email = email;
-    }
-
-    public PersonDTO(){}
 
     public Long getId() {
         return id;

@@ -8,14 +8,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.auth.LoginRequestDTO;
 import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
 import ru.ship.ShipHub.models.dto.auth.VerifyCodeRequestDTO;
 import ru.ship.ShipHub.models.response.AuthResponse;
 import ru.ship.ShipHub.services.AuthService;
 import ru.ship.ShipHub.util.JWTUtil;
-import ru.ship.ShipHub.util.Mapper;
 
 import java.util.Map;
 
@@ -26,12 +24,10 @@ public class AuthController {
     private final AuthService service;
     private final Logger log;
     private final JWTUtil jwtUtil;
-    private final Mapper mapper;
 
-    public AuthController(AuthService service, JWTUtil jwtUtil, Mapper mapper) {
+    public AuthController(AuthService service, JWTUtil jwtUtil) {
         this.service = service;
         this.jwtUtil = jwtUtil;
-        this.mapper = mapper;
         this.log = LoggerFactory.getLogger(AuthController.class);
     }
 
@@ -55,9 +51,13 @@ public class AuthController {
     }
 
     @PostMapping("/verify_code")
-    public PersonDTO verifyCode(
+    public AuthResponse verifyCode(
             @RequestBody @Valid VerifyCodeRequestDTO request
     ){
-        return service.verifyCode(request.email, request.code);
+        var person = service.verifyCode(request.email, request.code);
+        return new AuthResponse(
+                jwtUtil.generateToken(person.getId(), person.getUsername(), person.getType().toString()),
+                person
+        );
     }
 }

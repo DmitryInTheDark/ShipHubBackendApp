@@ -1,7 +1,9 @@
 package ru.ship.ShipHub.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,8 @@ public class AuthService {
         if (!person.getActive()){
             throw new BadCredentialsException("Активируйте аккаунт перед тем, как авторизоваться");
         }
+        log.info(passwordEncoder.encode("password"));
+        log.info(passwordEncoder.encode(person.getPassword()));
         if (!passwordEncoder.matches(password, person.getPassword())) {
             throw new BadCredentialsException("Неверный пароль");
         }
@@ -70,24 +74,55 @@ public class AuthService {
     public void registration(
             RegistrationRequestDTO dto
     ){
-        Optional<PersonEntity> personEntityOptional = personRepository.findByEmail(dto.email);
-        personEntityOptional
-                .filter(PersonEntity::getActive)
-                .ifPresent(p -> { throw new PersonIsExistException("Пользователь с таким email уже существует"); });
-        PersonEntity personEntity;
-        personEntity = personEntityOptional.map(
-                person -> updateExistingNonActiveUser(dto, person.getId())
-        ).orElseGet(
-                () -> createUser(dto)
-        );
+        Optional<PersonEntity> personOptional = personRepository.findByEmail(dto.email);
+        PersonEntity person;
+        if (personOptional.isPresent()){
+            person = personOptional.get();
+            if (person.getActive()) throw new BadRequestException("Пользователь с таким email уже существует");
+        }else {
+            person = personRepository.save(mapper.map(dto));
+            person.setPassword(passwordEncoder.encode(dto.password));
+        }
+        switch (dto.type){
+            case MANAGER -> throw new BadRequestException("Нельзя создать пользователя с таким типом");
+            case LEGAL -> {
+                if (dto.legalInfo == null) throw new BadRequestException("Информация о юридическом лице пустая");
+                LegalInfoEntity legalInfo = mapper.map(dto.legalInfo);
+                if (personOptional.isPresent()){
+                    if (person.getType() != dto.type){
+                        clearPhysicalInfo(person);
+                    }else{
+                        legalInfo.setId(person.getLegalInfo().getId());
+                    }
+                }
+                setLegalInfo(person, legalInfo);
+            }
+            case PHYSICAL -> {
+                if (dto.physicalInfo == null) throw new BadRequestException("Информация о физическом лице пустая");
+                PhysicalInfoEntity physicalInfo = mapper.map(dto.physicalInfo);
+                if (personOptional.isPresent()){
+                    if (person.getType() != dto.type){
+                        clearLegalInfo(person);
+                    }else{
+                        physicalInfo.setId(person.getPhysicalInfo().getId());
+                    }
+                }
+                setPhysicalInfo(person, physicalInfo);
+            }
+            default -> throw new BadRequestException("Неизвестный тип пользователя");
+        }
         var code = generateCode();
-        personEntity.setVerificationCode(code);
-        personRepository.save(personEntity);
-        sendMail(dto.email, code);
+        try {
+            sendMail(dto.email, code);
+            person.setVerificationCode(code);
+        }catch (MailSendException e){
+            throw new MailSendException("Не удалось отправить письмо, повторите попытку позже");
+        }
+        personRepository.save(person);
     }
 
     public PersonDTO verifyCode(String email, String code){
-        var person = personRepository.findByEmail(email).orElseThrow(PersonNotFoundException::new);
+        var person = personRepository.findByEmail(email).orElseThrow(() -> new PersonNotFoundException("Пользователь не найден"));
         if (person.getActive()){
             throw new PersonIsExistException("Пользователь уже существует");
         }else if (!Objects.equals(code, person.getVerificationCode())){
@@ -101,7 +136,7 @@ public class AuthService {
     }
 
     public void sendMail(String mail, String message){
-        mailUtil.sendMessage(mail, "Подтверждение регистрации", message);
+        mailUtil.sendMessage(mail, "ЮК", message);
     }
 
     public String generateCode() {
@@ -113,56 +148,42 @@ public class AuthService {
         return code.toString();
     }
 
-    private PersonEntity createUser(RegistrationRequestDTO dto){
-        return new PersonEntity(
-                dto.username,
-                dto.email,
-                passwordEncoder.encode(dto.password),
-                false,
-                null,
-                dto.type
-        );
+    @Transactional
+    public void clearPhysicalInfo(PersonEntity person){
+        PhysicalInfoEntity physicalInfo = physicalRepository
+                .findByPerson_Id(person.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Не найдена информация о физическом лице"));
+        physicalRepository.delete(physicalInfo);
+        person.setPhysicalInfo(null);
+        person.setType(null);
     }
 
-    private PersonEntity updateExistingNonActiveUser(RegistrationRequestDTO dto, Long userId){
-        PersonEntity person = personRepository.findById(userId).orElseThrow(PersonNotFoundException::new);
-        person.setUsername(dto.username);
-        person.setPassword(passwordEncoder.encode(dto.password));
-        person.setEmail(dto.email);
-        person.setActive(false);
-        LegalInfoEntity legalInfo = new LegalInfoEntity();
-        PhysicalInfoEntity physicalInfo = new PhysicalInfoEntity();
-        switch (dto.type){
-            case MANAGER -> throw new BadCredentialsException("Нельзя создать пользователя с таким типом");
-            case LEGAL -> {
-                legalInfo = mapper.map(dto.legalInfo);
-                if (person.getType() != PersonType.LEGAL){
-                    physicalRepository.delete(person.getPhysicalInfo());
-                    person.setPhysicalInfo(null);
-                    person.setType(PersonType.LEGAL);
-                }
-                person.setLegalInfo(legalInfo);
-            }
-            case PHYSICAL -> {
-                physicalInfo = mapper.map(dto.physicalInfo);
-                if (person.getType() != PersonType.PHYSICAL){
-                    legalInfoRepository.delete(person.getLegalInfo());
-                    person.setLegalInfo(null);
-                    person.setType(PersonType.PHYSICAL);
-                }
-                person.setPhysicalInfo(physicalInfo);
-            }
-            default -> throw new BadRequestException("Неверный тип пользователя");
-        }
-        var savedPerson = personRepository.save(person);
-        if (person.getType() == PersonType.LEGAL) {
-            legalInfo.setPerson(person);
-            legalInfoRepository.save(legalInfo);
-        }
-        if (person.getType() == PersonType.PHYSICAL) {
-            physicalInfo.setPerson(person);
-            physicalRepository.save(physicalInfo);
-        }
-        return savedPerson;
+    @Transactional
+    public void clearLegalInfo(PersonEntity person){
+        LegalInfoEntity legalInfo = legalInfoRepository
+                .findByPerson_Id(person.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Не найдена информация о юридическом лице"));
+        legalInfoRepository.delete(legalInfo);
+        person.setLegalInfo(null);
+        person.setType(null);
     }
+
+    @Transactional
+    public void setPhysicalInfo(PersonEntity person, PhysicalInfoEntity physicalInfo){
+        physicalInfo.setPerson(person);
+        PhysicalInfoEntity savedInfo = physicalRepository.save(physicalInfo);
+        person.setPhysicalInfo(savedInfo);
+        person.setType(PersonType.PHYSICAL);
+        personRepository.save(person);
+    }
+
+    @Transactional
+    public void setLegalInfo(PersonEntity person, LegalInfoEntity legalInfo){
+        legalInfo.setPerson(person);
+        LegalInfoEntity savedInfo = legalInfoRepository.save(legalInfo);
+        person.setLegalInfo(savedInfo);
+        person.setType(PersonType.LEGAL);
+        personRepository.save(person);
+    }
+
 }

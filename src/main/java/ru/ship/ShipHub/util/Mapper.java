@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.ship.ShipHub.models.dto.*;
+import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.EquipmentDTO;
 import ru.ship.ShipHub.models.dto.claim.MessageDTO;
@@ -26,7 +27,18 @@ public class Mapper {
     }
 
     public PersonDTO map(PersonEntity personEntity) {
-        return mapper.map(personEntity, PersonDTO.class);
+        LegalInfoDTO legalInfo = null;
+        PhysicalInfoDTO physicalInfo = null;
+        if(personEntity.getLegalInfo() != null) legalInfo = map(personEntity.getLegalInfo());
+        if(personEntity.getPhysicalInfo() != null) physicalInfo = map(personEntity.getPhysicalInfo());
+        return new PersonDTO(
+                personEntity.getId(),
+                personEntity.getUsername(),
+                personEntity.getEmail(),
+                personEntity.getType(),
+                legalInfo,
+                physicalInfo
+        );
     }
 
     public LegalInfoEntity map(LegalInfoDTO dto){
@@ -35,6 +47,22 @@ public class Mapper {
 
     public PhysicalInfoEntity map(PhysicalInfoDTO dto){
         return mapper.map(dto, PhysicalInfoEntity.class);
+    }
+
+    public LegalInfoDTO map(LegalInfoEntity entity){
+        return new LegalInfoDTO(
+                entity.getOrganizationName(),
+                entity.getInn(),
+                entity.getKpp(),
+                entity.getAddress(),
+                entity.getPhone()
+        );
+    }
+
+    public PhysicalInfoDTO map(PhysicalInfoEntity entity){
+        return new PhysicalInfoDTO(
+                entity.getAddress()
+        );
     }
 
     public ClaimEntity map(ClaimDTO dto){
@@ -139,4 +167,30 @@ public class Mapper {
                 entity.getDateCreate()
         );
     }
+
+    public void update(LegalInfoEntity forUpdate, LegalInfoEntity fromUpdate){
+        forUpdate.setId(fromUpdate.getId());
+        forUpdate.setOrganizationName(fromUpdate.getOrganizationName());
+        forUpdate.setInn(fromUpdate.getInn());
+        forUpdate.setKpp(fromUpdate.getKpp());
+        forUpdate.setAddress(fromUpdate.getAddress());
+        forUpdate.setPhone(fromUpdate.getPhone());
+    }
+
+    public void update(PhysicalInfoEntity forUpdate, PhysicalInfoEntity fromUpdate){
+        forUpdate.setId(fromUpdate.getId());
+        forUpdate.setAddress(fromUpdate.getAddress());
+    }
+
+    public PersonEntity map(RegistrationRequestDTO dto){
+        return new PersonEntity(
+                dto.username,
+                dto.email,
+                dto.password,
+                false,
+                null,
+                dto.type
+        );
+    }
+
 }
