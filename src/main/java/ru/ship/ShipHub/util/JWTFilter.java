@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -21,10 +23,12 @@ public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jwtUtil;
     private final PersonRepository personRepository;
+    private final Logger log;
 
     public JWTFilter(JWTUtil jwtUtil, PersonRepository personRepository) {
         this.jwtUtil = jwtUtil;
         this.personRepository = personRepository;
+        this.log = LoggerFactory.getLogger(JWTFilter.class);
     }
 
     @Override
@@ -32,6 +36,7 @@ public class JWTFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && !header.isBlank() && header.startsWith("Bearer ")){
             String token = header.substring(7);
+            log.info(token);
             if (token.isBlank()){
                 response.sendError(401, "Blank JWT token");
                 return;

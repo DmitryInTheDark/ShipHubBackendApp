@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.models.dto.DocumentInfoDTO;
+import ru.ship.ShipHub.models.dto.ListDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.services.ClaimsService;
@@ -17,7 +18,6 @@ import ru.ship.ShipHub.services.ClaimsService;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -70,19 +70,21 @@ public class ClaimsController {
     }
 
     @GetMapping
-    public List<ClaimDTO> getAllClaims(
+    public ListDTO<ClaimDTO> getAllClaims(
             @RequestParam(value = "page_number", defaultValue = "0") int pageNumber,
-            @RequestParam(value = "page_size", defaultValue = "10") int pageSize,
+            @RequestParam(value = "page_size", defaultValue = "20") int pageSize,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
         return claimsService.getAllClaims(pageNumber, pageSize, personDetails);
     }
 
     @GetMapping("/active")
-    public List<ClaimDTO> getActiveClaims(
+    public ListDTO<ClaimDTO> getActiveClaims(
+            @RequestParam(value = "page_number", defaultValue = "0") int pageNumber,
+            @RequestParam(value = "page_size", defaultValue = "20") int pageSize,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
-        return claimsService.getActiveClaims(personDetails);
+        return claimsService.getActiveClaims(pageNumber, pageSize, personDetails);
     }
 
     @PatchMapping("/{id}/update")

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.models.dto.DocumentDTO;
 import ru.ship.ShipHub.models.dto.DocumentInfoDTO;
+import ru.ship.ShipHub.models.dto.ListDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
@@ -125,7 +126,7 @@ public class ClaimsService {
     }
 
     @Transactional
-    public List<ClaimDTO> getAllClaims(
+    public ListDTO<ClaimDTO> getAllClaims(
             int pageNumber,
             int pageSize,
             PersonDetails personDetails
@@ -133,14 +134,16 @@ public class ClaimsService {
         boolean isManager = personDetails.getAuthorities().stream()
                 .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
+        List<ClaimDTO> claims;
         if (isManager){
-            return claimRepository.findAll(pageRequest).stream().map(mapper::map).toList();
+            claims = claimRepository.findAll(pageRequest).stream().map(mapper::map).toList();
         }else {
-            return claimRepository.findByWhoCreateId(personDetails.getPerson().getId(), pageRequest)
+            claims = claimRepository.findByWhoCreateId(personDetails.getPerson().getId(), pageRequest)
                     .stream()
                     .map(mapper::map)
                     .toList();
         }
+        return new ListDTO<>(claimRepository.count(), claims);
     }
 
     public ClaimDTO getClaimById(Long id){
@@ -148,11 +151,18 @@ public class ClaimsService {
         return mapper.map(claimEntity);
     }
 
-    public List<ClaimDTO> getActiveClaims(PersonDetails personDetails) {
-        return claimRepository.findAll().stream()
-                .filter( claim ->
-                        claim.getStatus() != ClaimStatus.DOCUMENTS_DELIVERED
-                ).map(mapper::map).toList();
+    public ListDTO<ClaimDTO> getActiveClaims(int pageNumber, int pageSize, PersonDetails personDetails) {
+        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
+        if (isManager(personDetails)){
+            var activeClaims = claimRepository.findWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
+                    .stream().map(mapper::map).toList();
+            return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED), activeClaims);
+        }else{
+            var activeClaims = claimRepository
+                    .findWithoutStatusByWhoCreateId(personDetails.getPerson().getId(), ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
+                    .stream().map(mapper::map).toList();
+            return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED), activeClaims);
+        }
     }
 
     public ClaimDTO updateClaim(Long id, UpdateClaimDTO dto) {
@@ -202,6 +212,11 @@ public class ClaimsService {
     public DocumentInfoDTO getDocumentInfoById(Long id) {
         var entity = documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
         return mapper.mapDocumentInfo(entity);
+    }
+
+    private boolean isManager(PersonDetails personDetails){
+        return personDetails.getAuthorities().stream()
+                .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
     }
 
     public DocumentDTO getDocument(Long id){
