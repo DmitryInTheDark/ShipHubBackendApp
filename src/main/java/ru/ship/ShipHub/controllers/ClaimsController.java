@@ -14,6 +14,7 @@ import ru.ship.ShipHub.models.dto.ListDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.services.ClaimsService;
+import ru.ship.ShipHub.util.ClaimStatus;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -73,9 +74,14 @@ public class ClaimsController {
     public ListDTO<ClaimDTO> getAllClaims(
             @RequestParam(value = "page_number", defaultValue = "0") int pageNumber,
             @RequestParam(value = "page_size", defaultValue = "20") int pageSize,
+            @RequestParam(required = false) ClaimStatus status,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
-        return claimsService.getAllClaims(pageNumber, pageSize, personDetails);
+        if (status == null){
+            return claimsService.getAllClaims(pageNumber, pageSize, personDetails);
+        }else{
+            return claimsService.getClaimsByStatus(pageNumber, pageSize, status, personDetails);
+        }
     }
 
     @GetMapping("/active")
@@ -86,6 +92,15 @@ public class ClaimsController {
     ){
         return claimsService.getActiveClaims(pageNumber, pageSize, personDetails);
     }
+
+//    @GetMapping()
+//    public ListDTO<ClaimDTO> getClaimsByStatus(
+//            @RequestParam(value = "page_number", defaultValue = "0") int pageNumber,
+//            @RequestParam(value = "page_size", defaultValue = "20") int pageSize,
+//            @AuthenticationPrincipal PersonDetails personDetails
+//    ){
+//        return claimsService.getClaimsByStatus(pageNumber, pageSize, status, personDetails);
+//    }
 
     @PatchMapping("/{id}/update")
     public ClaimDTO updateClaim(

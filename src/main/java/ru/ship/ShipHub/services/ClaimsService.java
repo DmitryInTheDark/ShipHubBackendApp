@@ -153,15 +153,31 @@ public class ClaimsService {
 
     public ListDTO<ClaimDTO> getActiveClaims(int pageNumber, int pageSize, PersonDetails personDetails) {
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
+        var personId = personDetails.getPerson().getId();
         if (isManager(personDetails)){
             var activeClaims = claimRepository.findWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
                     .stream().map(mapper::map).toList();
             return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED), activeClaims);
         }else{
             var activeClaims = claimRepository
-                    .findWithoutStatusByWhoCreateId(personDetails.getPerson().getId(), ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
+                    .findWithoutStatusByWhoCreateId(personId, ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
                     .stream().map(mapper::map).toList();
-            return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED), activeClaims);
+            return new ListDTO<>(claimRepository.countWithoutStatusByWhoCreateId(ClaimStatus.DOCUMENTS_DELIVERED, personId), activeClaims);
+        }
+    }
+
+    public ListDTO<ClaimDTO> getClaimsByStatus(int pageNumber, int pageSize, ClaimStatus status, PersonDetails personDetails) {
+        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
+        var personId = personDetails.getPerson().getId();
+        if (isManager(personDetails)){
+            var activeClaims = claimRepository.findByStatus(status, pageRequest)
+                    .stream().map(mapper::map).toList();
+            return new ListDTO<>(claimRepository.countWithoutStatus(status), activeClaims);
+        }else{
+            var activeClaims = claimRepository
+                    .findByStatusByWhoCreateId(status, personId, pageRequest)
+                    .stream().map(mapper::map).toList();
+            return new ListDTO<>(claimRepository.countWithStatusByWhoCreateId(status, personId), activeClaims);
         }
     }
 

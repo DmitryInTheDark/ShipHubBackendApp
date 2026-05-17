@@ -18,6 +18,15 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @Query("SELECT COUNT(e) FROM ClaimEntity e WHERE e.status != :status")
     long countWithoutStatus(ClaimStatus status);
 
+    @Query("SELECT COUNT(e) FROM ClaimEntity e WHERE e.status = :status")
+    long countWithStatus(ClaimStatus status);
+
+    @Query("SELECT COUNT(e) FROM ClaimEntity e WHERE e.status != :status AND e.whoCreate.id = :personId")
+    long countWithoutStatusByWhoCreateId(ClaimStatus status, long personId);
+
+    @Query("SELECT COUNT(e) FROM ClaimEntity e WHERE e.status = :status AND e.whoCreate.id = :personId")
+    long countWithStatusByWhoCreateId(ClaimStatus status, long personId);
+
     @Override
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     List<ClaimEntity> findAll();
@@ -25,6 +34,10 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @Query("SELECT e FROM ClaimEntity e WHERE e.status = :status")
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     List<ClaimEntity> findByStatus(ClaimStatus status, Pageable pageable);
+
+    @Query("SELECT e FROM ClaimEntity e WHERE e.status = :status AND e.whoCreate.id = :personId")
+    @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
+    List<ClaimEntity> findByStatusByWhoCreateId(ClaimStatus status, long personId, Pageable pageable);
 
     @Query("SELECT e FROM ClaimEntity e WHERE e.status != :status")
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
