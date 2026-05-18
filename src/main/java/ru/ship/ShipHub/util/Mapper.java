@@ -160,8 +160,8 @@ public class Mapper {
 
         public DocumentDTO map(DocumentEntity entity){
         return new DocumentDTO(
+                entity.getId(),
                 entity.getName(),
-                entity.getBytes(),
                 entity.getType(),
                 entity.getContentType(),
                 entity.getDateCreate()

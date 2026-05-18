@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.ship.ShipHub.config.security.PersonDetails;
+import ru.ship.ShipHub.models.dto.DocumentDTO;
 import ru.ship.ShipHub.models.dto.DocumentInfoDTO;
 import ru.ship.ShipHub.models.dto.ListDTO;
 import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
@@ -72,8 +73,8 @@ public class ClaimsController {
 
     @GetMapping
     public ListDTO<ClaimDTO> getAllClaims(
-            @RequestParam(value = "page_number", defaultValue = "0") int pageNumber,
-            @RequestParam(value = "page_size", defaultValue = "20") int pageSize,
+            @RequestParam(value = "page_number", required = false) Integer pageNumber,
+            @RequestParam(value = "page_size", required = false) Integer pageSize,
             @RequestParam(required = false) ClaimStatus status,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
@@ -137,6 +138,14 @@ public class ClaimsController {
             @PathVariable("id") Long id
     ){
         return claimsService.getDocumentInfoById(id);
+    }
+
+    @GetMapping("/documents")
+    public ListDTO<DocumentDTO> getClaimDocuments(
+            @RequestParam(name = "claim_id") long claimId,
+            @AuthenticationPrincipal PersonDetails personDetails
+    ){
+        return claimsService.getClaimsDocuments(claimId, personDetails);
     }
 
     @GetMapping("/documents/{id}/file")

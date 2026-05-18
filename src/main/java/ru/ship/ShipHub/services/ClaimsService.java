@@ -127,23 +127,48 @@ public class ClaimsService {
 
     @Transactional
     public ListDTO<ClaimDTO> getAllClaims(
-            int pageNumber,
-            int pageSize,
+            Integer pageNumber,
+            Integer pageSize,
             PersonDetails personDetails
     ) {
-        boolean isManager = personDetails.getAuthorities().stream()
-                .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
-        PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
+        PageRequest pageRequest;
+        if (pageNumber == null) {
+            pageRequest = null;
+        }else{
+            pageRequest = PageRequest.of(pageNumber, pageSize == null ? 20 : pageSize, Sort.by("id").ascending());
+        }
         List<ClaimDTO> claims;
-        if (isManager){
-            claims = claimRepository.findAll(pageRequest).stream().map(mapper::map).toList();
+        if (isManager(personDetails)){
+            if (pageRequest != null){
+                claims = claimRepository.findAll(pageRequest).stream().map(mapper::map).toList();
+            }else{
+                claims = claimRepository.findAll().stream().map(mapper::map).toList();
+            }
         }else {
-            claims = claimRepository.findByWhoCreateId(personDetails.getPerson().getId(), pageRequest)
-                    .stream()
-                    .map(mapper::map)
-                    .toList();
+            if (pageRequest != null){
+                claims = claimRepository.findByWhoCreateId(personDetails.getPerson().getId(), pageRequest)
+                        .stream()
+                        .map(mapper::map)
+                        .toList();
+            }else{
+                claims = claimRepository.findByWhoCreateId(personDetails.getPerson().getId())
+                        .stream()
+                        .map(mapper::map)
+                        .toList();
+            }
         }
         return new ListDTO<>(claimRepository.count(), claims);
+    }
+
+    @Transactional
+    public ListDTO<ClaimDTO> getAllClaims(
+            PersonDetails personDetails
+    ) {
+        if (isManager(personDetails)){
+            return new ListDTO<>(claimRepository.count(), claimRepository.findAll().stream().map(mapper::map).toList());
+        }else{
+            return new ListDTO<>(claimRepository.countByWhoCreate(personDetails.getPerson()), claimRepository.findByWhoCreateId(personDetails.getPerson().getId()).stream().map(mapper::map).toList());
+        }
     }
 
     public ClaimDTO getClaimById(Long id){
@@ -151,6 +176,7 @@ public class ClaimsService {
         return mapper.map(claimEntity);
     }
 
+    @Transactional
     public ListDTO<ClaimDTO> getActiveClaims(int pageNumber, int pageSize, PersonDetails personDetails) {
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
         var personId = personDetails.getPerson().getId();
@@ -235,8 +261,13 @@ public class ClaimsService {
                 .anyMatch(auth -> Objects.equals(auth.getAuthority(), "ROLE_MANAGER"));
     }
 
-    public DocumentDTO getDocument(Long id){
-        var entity = documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
-        return mapper.map(entity);
+    public DocumentEntity getDocument(Long id){
+        return documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
+    }
+
+    public ListDTO<DocumentDTO> getClaimsDocuments(long claimId, PersonDetails personDetails) {
+        var person = personDetails.getPerson();
+        var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+        return new ListDTO<>(documentRepository.countByClaim(claim), documentRepository.findAllByClaim(claim).stream().map(mapper::map).toList());
     }
 }

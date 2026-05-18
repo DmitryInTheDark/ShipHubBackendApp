@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import ru.ship.ShipHub.models.entity.ClaimEntity;
+import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.util.ClaimStatus;
 
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.Optional;
 public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
 
     long countByStatus(ClaimStatus status);
+
+    long countByWhoCreate(PersonEntity person);
 
     @Query("SELECT COUNT(e) FROM ClaimEntity e WHERE e.status != :status")
     long countWithoutStatus(ClaimStatus status);

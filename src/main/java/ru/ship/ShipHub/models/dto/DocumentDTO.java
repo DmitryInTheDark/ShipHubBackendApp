@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 
 public class DocumentDTO {
 
-    private String name;
+    private long id;
 
-    private byte[] bytes;
+    private String name;
 
     private DocumentType type;
 
@@ -18,12 +18,20 @@ public class DocumentDTO {
 
     public DocumentDTO() {}
 
-    public DocumentDTO(String name, byte[] bytes, DocumentType type, String contentType, LocalDateTime dateCreate) {
+    public DocumentDTO(long id, String name, DocumentType type, String contentType, LocalDateTime dateCreate) {
+        this.id = id;
         this.name = name;
-        this.bytes = bytes;
         this.type = type;
         this.contentType = contentType;
         this.dateCreate = dateCreate;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -32,14 +40,6 @@ public class DocumentDTO {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public byte[] getBytes() {
-        return bytes;
-    }
-
-    public void setBytes(byte[] bytes) {
-        this.bytes = bytes;
     }
 
     public DocumentType getType() {
