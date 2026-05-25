@@ -132,15 +132,7 @@ public class ClaimsController {
         return claimsService.updateClaim(id, dto);
     }
 
-    @GetMapping(value = "photo/{id}")
-    public ResponseEntity<byte[]> getPhotoById(
-            @PathVariable("id") Long id
-    ){
-        var photo = claimsService.getPhotoById(id);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(photo.getContentType()))
-                .body(photo.getBytes());
-    }
+
 
     @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/attach_document")
