@@ -42,6 +42,27 @@ public class ClaimsController {
     }
 
     @PreAuthorize("hasRole('PHYSICAL', 'LEGAL')")
+    @PostMapping(value = "/create_with_photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ClaimDTO createClaimWithPhotos(
+            @RequestPart("claim") @Valid ClaimDTO dto,
+            @RequestPart(value = "photo1", required = false) MultipartFile photo1,
+            @RequestPart(value = "photo2", required = false) MultipartFile photo2,
+            @RequestPart(value = "photo3", required = false) MultipartFile photo3,
+            @RequestPart(value = "document1", required = false) MultipartFile document1,
+            @RequestParam(value = "document_type1", required = false) String documentType1,
+            @RequestPart(value = "document2", required = false) MultipartFile document2,
+            @RequestParam(value = "document_type2", required = false) String documentType2,
+            @RequestPart(value = "document3", required = false) MultipartFile document3,
+            @RequestParam(value = "document_type3", required = false) String documentType3,
+            @AuthenticationPrincipal PersonDetails personDetails
+    ){
+        return claimsService.createClaimWithPhotos(dto, personDetails, photo1, photo2, photo3,
+                document1, documentType1,
+                document2, documentType2,
+                document3, documentType3);
+    }
+
+    @PreAuthorize("hasRole('PHYSICAL', 'LEGAL')")
     @PostMapping(value = "/attach_photos/{id}")
     public ResponseEntity attachPhoto(
             @RequestPart(value = "photo1", required = false) MultipartFile photo1,

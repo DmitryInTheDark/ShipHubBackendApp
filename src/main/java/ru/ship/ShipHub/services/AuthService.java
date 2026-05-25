@@ -142,7 +142,7 @@ public class AuthService {
     public String generateCode() {
         StringBuilder code = new StringBuilder();
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             code.append(chars.charAt((int) (Math.random() * (chars.length()))));
         }
         return code.toString();

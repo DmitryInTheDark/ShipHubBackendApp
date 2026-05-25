@@ -134,6 +134,9 @@ public class Mapper {
 
     public MessageDTO map(MessageEntity entity){
         return new MessageDTO(
+                entity.getId(),
+                entity.getClaim() != null ? entity.getClaim().getId() : null,
+                entity.getSender() != null ? entity.getSender().getId() : null,
                 entity.getText(),
                 entity.getDateCreated()
         );
@@ -169,7 +172,9 @@ public class Mapper {
     }
 
     public void update(LegalInfoEntity forUpdate, LegalInfoEntity fromUpdate){
-        forUpdate.setId(fromUpdate.getId());
+        if (fromUpdate.getId() != null) {
+            forUpdate.setId(fromUpdate.getId());
+        }
         forUpdate.setOrganizationName(fromUpdate.getOrganizationName());
         forUpdate.setInn(fromUpdate.getInn());
         forUpdate.setKpp(fromUpdate.getKpp());
@@ -178,7 +183,9 @@ public class Mapper {
     }
 
     public void update(PhysicalInfoEntity forUpdate, PhysicalInfoEntity fromUpdate){
-        forUpdate.setId(fromUpdate.getId());
+        if (fromUpdate.getId() != null) {
+            forUpdate.setId(fromUpdate.getId());
+        }
         forUpdate.setAddress(fromUpdate.getAddress());
     }
 

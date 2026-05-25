@@ -22,12 +22,17 @@ public class MessageEntity {
     @JoinColumn(name = "claim_id", referencedColumnName = "id")
     private ClaimEntity claim;
 
+    @ManyToOne
+    @JoinColumn(name = "sender_id", referencedColumnName = "id")
+    private PersonEntity sender;
+
     public MessageEntity() {}
 
-    public MessageEntity(String text, LocalDateTime dateCreated, ClaimEntity claim) {
+    public MessageEntity(String text, LocalDateTime dateCreated, ClaimEntity claim, PersonEntity sender) {
         this.text = text;
         this.dateCreated = dateCreated;
         this.claim = claim;
+        this.sender = sender;
     }
 
     public Long getId() {
@@ -60,5 +65,13 @@ public class MessageEntity {
 
     public void setClaim(ClaimEntity claim) {
         this.claim = claim;
+    }
+
+    public PersonEntity getSender() {
+        return sender;
+    }
+
+    public void setSender(PersonEntity sender) {
+        this.sender = sender;
     }
 }

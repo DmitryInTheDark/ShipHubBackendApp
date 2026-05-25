@@ -15,4 +15,5 @@ message MessageRequest{
 
 message Message{
   string content = 1;
+  int64 senderId = 2;
 }

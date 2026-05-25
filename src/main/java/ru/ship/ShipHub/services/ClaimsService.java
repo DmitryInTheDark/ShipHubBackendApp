@@ -89,6 +89,49 @@ public class ClaimsService {
         return mapper.map(savedClaim);
     }
 
+    @Transactional
+    public ClaimDTO createClaimWithPhotos(
+            ClaimDTO dto,
+            @AuthenticationPrincipal PersonDetails personDetails,
+            MultipartFile photo1,
+            MultipartFile photo2,
+            MultipartFile photo3,
+            MultipartFile document1,
+            String documentType1,
+            MultipartFile document2,
+            String documentType2,
+            MultipartFile document3,
+            String documentType3
+    ){
+        ClaimDTO created = createClaim(dto, personDetails);
+        var photoProblems = attachPhotos(created.getId(), photo1, photo2, photo3);
+        if (!photoProblems.isEmpty()) {
+            log.warn("Некоторые фото не удалось прикрепить: {}", photoProblems);
+        }
+
+        List<MultipartFile> documents = new ArrayList<>();
+        documents.add(document1);
+        documents.add(document2);
+        documents.add(document3);
+        List<String> documentTypes = new ArrayList<>();
+        documentTypes.add(documentType1);
+        documentTypes.add(documentType2);
+        documentTypes.add(documentType3);
+        for (int i = 0; i < documents.size(); i++) {
+            MultipartFile document = documents.get(i);
+            String documentType = documentTypes.get(i);
+            if (document == null || document.isEmpty()) {
+                continue;
+            }
+            if (documentType == null || documentType.isBlank()) {
+                throw new BadRequestException("Для документа document" + (i + 1) + " не задан document_type");
+            }
+            attachDocument(created.getId(), document, documentType);
+        }
+
+        return created;
+    }
+
     public Map<Integer, String> attachPhotos(
             Long claimId,
             MultipartFile photo1,
@@ -104,7 +147,7 @@ public class ClaimsService {
         var index = 0;
         var notEmptyPhotos = photos.stream()
                 .filter(file -> !file.isEmpty()).toList();
-        if (equipment.getImages().size() + notEmptyPhotos.size() > 3) {
+        if (equipment.getImages() != null && equipment.getImages().size() + notEmptyPhotos.size() > 3) {
             throw new BadRequestException(
                     "К одной заявке нельзя прикрепить больше трёх фото. Текущее количество фото: " + equipment.getImages().size()
             );
@@ -227,11 +270,15 @@ public class ClaimsService {
         var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
         if (document.isEmpty()) throw new BadRequestException("Файл пустой");
         if (!allowedContentTypes.contains(document.getContentType())) throw new BadRequestException("Формат файла не поддерживается");
+        
+        // Убираем кавычки, если они есть
+        String cleanedType = documentType.replaceAll("^\"|\"$", "");
+        
         DocumentType type;
         try{
-            type = DocumentType.valueOf(documentType.toUpperCase());
+            type = DocumentType.valueOf(cleanedType.toUpperCase());
         }catch (IllegalArgumentException e){
-            throw new BadRequestException("Некоректный тип документа");
+            throw new BadRequestException("Некоректный тип документа: '" + documentType + "'. Допустимые значения: INFO, ACT, AGREEMENT, CHECK");
         }
         DocumentEntity documentEntity;
         try{
