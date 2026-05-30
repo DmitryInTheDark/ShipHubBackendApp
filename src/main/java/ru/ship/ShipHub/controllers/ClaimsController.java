@@ -16,6 +16,7 @@ import ru.ship.ShipHub.models.dto.claim.ClaimDTO;
 import ru.ship.ShipHub.models.dto.claim.UpdateClaimDTO;
 import ru.ship.ShipHub.services.ClaimsService;
 import ru.ship.ShipHub.util.ClaimStatus;
+import ru.ship.ShipHub.util.exceptions.BadRequestException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -93,6 +94,20 @@ public class ClaimsController {
             @AuthenticationPrincipal PersonDetails personDetails
     ){
         return claimsService.getNotifications(personDetails);
+    }
+
+    @PreAuthorize("hasRole('PHYSICAL', 'LEGAL', 'MANAGER')")
+    @PostMapping(value = "/{id}/notification/read")
+    public ResponseEntity markNotificationRead(
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal PersonDetails personDetails
+    ){
+        try {
+            claimsService.clearNotification(id, personDetails);
+            return ResponseEntity.ok().build();
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")

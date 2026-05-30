@@ -335,6 +335,15 @@ public class ClaimsService {
         return result;
     }
 
+    @Transactional
+    public void clearNotification(Long claimId, PersonDetails actor) {
+        var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+        claim.setLastUpdate(null);
+        claim.setLastUpdateAt(null);
+        claim.setLastUpdateBy(null);
+        claimRepository.save(claim);
+    }
+
     public DocumentInfoDTO getDocumentInfoById(Long id) {
         var entity = documentRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Документ с таким id не найден"));
         return mapper.mapDocumentInfo(entity);
