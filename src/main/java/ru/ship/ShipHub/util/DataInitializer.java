@@ -14,9 +14,9 @@ public class DataInitializer {
     public CommandLineRunner initManagers(PersonRepository personRepository,
                                           PasswordEncoder passwordEncoder) {
         return args -> {
-            if (personRepository.findByEmail("email").isEmpty()) {
+            if (personRepository.findByEmail("email@email.ru").isEmpty()) {
                 PersonEntity manager = new PersonEntity();
-                manager.setEmail("email");
+                manager.setEmail("email@email.ru");
                 manager.setUsername("Анатолий");
                 manager.setPassword(passwordEncoder.encode("password"));
                 manager.setType(PersonType.MANAGER);
