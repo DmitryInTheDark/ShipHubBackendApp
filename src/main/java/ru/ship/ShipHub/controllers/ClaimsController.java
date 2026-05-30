@@ -20,6 +20,7 @@ import ru.ship.ShipHub.util.ClaimStatus;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -134,7 +135,6 @@ public class ClaimsController {
 
 
 
-    @PreAuthorize("hasRole('MANAGER')")
     @PostMapping("/{id}/attach_document")
     public ResponseEntity attachDocument(
             @PathVariable("id") Long documentId,
@@ -144,6 +144,17 @@ public class ClaimsController {
         var result = claimsService.attachDocument(documentId, document, documentType);
         if (result) return ResponseEntity.status(201).build();
         else return ResponseEntity.status(400).body(Map.of("error", "Не удалось загрузить файл"));
+    }
+
+    @PostMapping("/{id}/attach_documents")
+    public ResponseEntity attachDocuments(
+            @PathVariable("id") Long documentId,
+            @RequestPart List<MultipartFile> documents,
+            @RequestParam("document_types") List<String> documentTypes
+    ){
+        var response = claimsService.attachDocuments(documentId, documents, documentTypes);
+        if (response.isEmpty()) return ResponseEntity.status(201).build();
+        else return ResponseEntity.status(201).body(response);
     }
     
     @GetMapping("/documents/{id}")

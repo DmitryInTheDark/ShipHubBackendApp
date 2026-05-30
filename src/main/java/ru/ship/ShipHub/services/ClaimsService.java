@@ -317,4 +317,78 @@ public class ClaimsService {
         var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
         return new ListDTO<>(documentRepository.countByClaim(claim), documentRepository.findAllByClaim(claim).stream().map(mapper::map).toList());
     }
+
+    public Map<String, String> attachDocuments(Long claimId,
+                                               List<MultipartFile> documents,
+                                               List<String> documentTypes) {
+
+        Map<String, String> result = new LinkedHashMap<>(); // сохраняем порядок файлов
+
+        if (documents.isEmpty()) {
+            return result; // пустая мапа
+        }
+
+        if (documents.size() != documentTypes.size()) {
+            throw new BadRequestException("Количество файлов не совпадает с количеством типов документов");
+        }
+
+        ClaimEntity claim = claimRepository.findById(claimId)
+                .orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
+
+        for (int i = 0; i < documents.size(); i++) {
+            MultipartFile document = documents.get(i);
+            String docTypeStr = documentTypes.get(i);
+            String filename = document.getOriginalFilename() != null
+                    ? document.getOriginalFilename()
+                    : "unknown_file_" + i;
+
+            try {
+                // Валидация файла
+                if (document.isEmpty()) {
+                    result.put(filename, "Файл пустой");
+                    continue;
+                }
+
+                if (!allowedContentTypes.contains(document.getContentType())) {
+                    result.put(filename, "Формат файла не поддерживается: " + document.getContentType());
+                    continue;
+                }
+
+                // Очистка и валидация типа документа
+                String cleanedType = docTypeStr.replaceAll("^\"|\"$", "").trim().toUpperCase();
+
+                DocumentType type;
+                try {
+                    type = DocumentType.valueOf(cleanedType);
+                } catch (IllegalArgumentException e) {
+                    result.put(filename, "Некорректный тип документа: '" + docTypeStr +
+                            "'. Допустимые: INFO, ACT, AGREEMENT, CHECK");
+                    continue;
+                }
+
+                // Сохранение
+                DocumentEntity documentEntity = new DocumentEntity(
+                        document.getBytes(),
+                        document.getContentType(),
+                        filename,
+                        type,
+                        LocalDateTime.now(),
+                        claim
+                );
+
+                documentRepository.save(documentEntity);
+
+                result.put(filename, "Успешно");
+
+            } catch (IOException e) {
+                log.error("Ошибка при чтении файла {}: {}", filename, e.getMessage());
+                result.put(filename, "Не удалось прочитать файл");
+            } catch (Exception e) {
+                log.error("Неожиданная ошибка при обработке файла {}: {}", filename, e.getMessage(), e);
+                result.put(filename, "Внутренняя ошибка при обработке файла");
+            }
+        }
+
+        return result;
+    }
 }
