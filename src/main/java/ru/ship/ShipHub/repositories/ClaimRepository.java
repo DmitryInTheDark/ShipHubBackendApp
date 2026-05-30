@@ -64,6 +64,10 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     Page<ClaimEntity> findWithoutStatusByWhoCreateId(Long userId, ClaimStatus status, Pageable pageable);
 
+    @Query("SELECT c FROM ClaimEntity c WHERE c.lastUpdateBy.id <> :userId AND c.lastUpdateAt IS NOT NULL")
+    @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
+    List<ClaimEntity> findNotificationsForManager(Long userId);
+
     @Override
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     Optional<ClaimEntity> findById(Long aLong);

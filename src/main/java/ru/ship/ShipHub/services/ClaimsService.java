@@ -318,7 +318,12 @@ public class ClaimsService {
      @Transactional
     public java.util.List<ru.ship.ShipHub.models.dto.NotificationDTO> getNotifications(PersonDetails personDetails) {
         var user = personDetails.getPerson();
-        var claims = claimRepository.findNotificationsForUser(user.getId());
+        java.util.List<ru.ship.ShipHub.models.entity.ClaimEntity> claims;
+        if (isManager(personDetails)) {
+            claims = claimRepository.findNotificationsForManager(user.getId());
+        } else {
+            claims = claimRepository.findNotificationsForUser(user.getId());
+        }
         var result = new ArrayList<ru.ship.ShipHub.models.dto.NotificationDTO>();
         for (var c : claims) {
             String text = c.getLastUpdate();
