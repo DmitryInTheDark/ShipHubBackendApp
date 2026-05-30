@@ -68,21 +68,22 @@ public class ClaimsService {
     }
 
 
+    @Transactional
     public ClaimDTO createClaim(
             ClaimDTO dto,
             @AuthenticationPrincipal PersonDetails personDetails
     ){
+        if (dto.isCustomType() && dto.getTestType() != TestType.OTHER) {
+            throw new BadRequestException("Заявка с нестандартным типом тестирования не может содержать другой тип тестирования");
+        }
+        if (dto.getEquipment().isCustomType() && dto.getEquipment().getEquipmentType() != EquipmentType.OTHER) {
+            throw new BadRequestException("Оборудование с нестандартным типом не может содержать другой тип оборудования");
+        }
         ClaimEntity claim = mapper.map(dto);
         claim.setDateCreate(LocalDateTime.now());
         EquipmentEntity equipment = mapper.map(dto.getEquipment());
-        equipmentRepository.save(equipment);
+        equipment.setClaim(claim);
         claim.setEquipment(equipment);
-        if (claim.isCustomType() && claim.getTestType() != TestType.OTHER) {
-            throw new BadRequestException("Заявка с нестандартным типом тестирования не может содержать другой тип тестирования");
-        }
-        if (claim.getEquipment().isCustomType() && claim.getEquipment().getEquipmentType() != EquipmentType.OTHER) {
-            throw new BadRequestException("Оборудование с нестандартным типом не может содержать другой тип оборудования");
-        }
         claim.setWhoCreate(personDetails.getPerson());
         claim.setStatus(ClaimStatus.CREATED);
         ClaimEntity savedClaim = claimRepository.save(claim);
@@ -104,7 +105,7 @@ public class ClaimsService {
             String documentType3
     ){
         ClaimDTO created = createClaim(dto, personDetails);
-        var photoProblems = attachPhotos(created.getId(), photo1, photo2, photo3);
+        var photoProblems = attachPhotos(created.getId(), photo1, photo2, photo3, personDetails);
         if (!photoProblems.isEmpty()) {
             log.warn("Некоторые фото не удалось прикрепить: {}", photoProblems);
         }
@@ -126,18 +127,19 @@ public class ClaimsService {
             if (documentType == null || documentType.isBlank()) {
                 throw new BadRequestException("Для документа document" + (i + 1) + " не задан document_type");
             }
-            attachDocument(created.getId(), document, documentType);
+            attachDocument(created.getId(), document, documentType, personDetails);
         }
 
         return created;
     }
 
-    public Map<Integer, String> attachPhotos(
+        public Map<Integer, String> attachPhotos(
             Long claimId,
             MultipartFile photo1,
             MultipartFile photo2,
-            MultipartFile photo3
-    ){
+            MultipartFile photo3,
+            PersonDetails actor
+        ){
         var photos = Stream.of(photo1, photo2, photo3)
                 .filter(Objects::nonNull)
                 .toList();
@@ -159,6 +161,12 @@ public class ClaimsService {
                         photo.getBytes(), equipment, "description", photo.getContentType()
                 );
                 equipmentImageRepository.save(photoEntity);
+                // update claim last update info
+                var claimEntity = claimRepository.findById(claimId).orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Заявка с таким id не найдена"));
+                claimEntity.setLastUpdateAt(java.time.LocalDateTime.now());
+                if (actor != null) claimEntity.setLastUpdateBy(actor.getPerson());
+                claimEntity.setLastUpdate("Фотография добавлена");
+                claimRepository.save(claimEntity);
             } catch (IOException e) {
                 log.error("Ошибка чтения файла: ", e);
                 problemPhotos.put(i+1, "Файл не удалось прочитать");
@@ -224,17 +232,18 @@ public class ClaimsService {
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
         var personId = personDetails.getPerson().getId();
         if (isManager(personDetails)){
-            var activeClaims = claimRepository.findWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
+            var activeClaims = claimRepository.findWithoutStatus(ClaimStatus.ENDED, pageRequest)
                     .stream().map(mapper::map).toList();
-            return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.DOCUMENTS_DELIVERED), activeClaims);
+            return new ListDTO<>(claimRepository.countWithoutStatus(ClaimStatus.ENDED), activeClaims);
         }else{
             var activeClaims = claimRepository
-                    .findWithoutStatusByWhoCreateId(personId, ClaimStatus.DOCUMENTS_DELIVERED, pageRequest)
+                    .findWithoutStatusByWhoCreateId(personId, ClaimStatus.ENDED, pageRequest)
                     .stream().map(mapper::map).toList();
-            return new ListDTO<>(claimRepository.countWithoutStatusByWhoCreateId(ClaimStatus.DOCUMENTS_DELIVERED, personId), activeClaims);
+            return new ListDTO<>(claimRepository.countWithoutStatusByWhoCreateId(ClaimStatus.ENDED, personId), activeClaims);
         }
     }
 
+    @Transactional
     public ListDTO<ClaimDTO> getClaimsByStatus(int pageNumber, int pageSize, ClaimStatus status, PersonDetails personDetails) {
         PageRequest pageRequest = PageRequest.of(pageNumber, pageSize, Sort.by("id").ascending());
         var personId = personDetails.getPerson().getId();
@@ -250,11 +259,13 @@ public class ClaimsService {
         }
     }
 
-    public ClaimDTO updateClaim(Long id, UpdateClaimDTO dto) {
+    public ClaimDTO updateClaim(Long id, UpdateClaimDTO dto, PersonDetails actor) {
         var claimToUpdate = claimRepository.findById(id).orElseThrow(ClaimNotFoundException::new);
         claimToUpdate.setStatus(dto.getStatus());
         claimToUpdate.setDateUpdate(LocalDateTime.now());
         claimToUpdate.setLastUpdate(dto.getUpdateInfo());
+        claimToUpdate.setLastUpdateAt(LocalDateTime.now());
+        if (actor != null) claimToUpdate.setLastUpdateBy(actor.getPerson());
         return mapper.map(claimRepository.save(claimToUpdate));
     }
 
@@ -262,11 +273,12 @@ public class ClaimsService {
         return imageRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Фото не найдено"));
     }
 
-    public boolean attachDocument(
+        public boolean attachDocument(
             Long claimId,
             MultipartFile document,
-            String documentType
-    ) {
+            String documentType,
+            PersonDetails actor
+        ) {
         var claim = claimRepository.findById(claimId).orElseThrow(() -> new EntityNotFoundException("Заявка не найдена"));
         if (document.isEmpty()) throw new BadRequestException("Файл пустой");
         if (!allowedContentTypes.contains(document.getContentType())) throw new BadRequestException("Формат файла не поддерживается");
@@ -295,7 +307,27 @@ public class ClaimsService {
             return false;
         }
         documentRepository.save(documentEntity);
+        // update claim last update info
+        claim.setLastUpdateAt(LocalDateTime.now());
+        if (actor != null) claim.setLastUpdateBy(actor.getPerson());
+        claim.setLastUpdate("Документ добавлен: " + document.getOriginalFilename());
+        claimRepository.save(claim);
         return true;
+    }
+
+     @Transactional
+    public java.util.List<ru.ship.ShipHub.models.dto.NotificationDTO> getNotifications(PersonDetails personDetails) {
+        var user = personDetails.getPerson();
+        var claims = claimRepository.findNotificationsForUser(user.getId());
+        var result = new ArrayList<ru.ship.ShipHub.models.dto.NotificationDTO>();
+        for (var c : claims) {
+            String text = c.getLastUpdate();
+            var author = c.getLastUpdateBy();
+            Long authorId = author != null ? author.getId() : null;
+            String authorName = author != null ? (author.getLegalInfo() != null && author.getLegalInfo().getOrganizationName() != null && !author.getLegalInfo().getOrganizationName().isBlank() ? author.getLegalInfo().getOrganizationName() : author.getUsername()) : null;
+            result.add(new ru.ship.ShipHub.models.dto.NotificationDTO(c.getId(), c.getLastUpdateAt(), text, authorId, authorName));
+        }
+        return result;
     }
 
     public DocumentInfoDTO getDocumentInfoById(Long id) {
@@ -320,7 +352,8 @@ public class ClaimsService {
 
     public Map<String, String> attachDocuments(Long claimId,
                                                List<MultipartFile> documents,
-                                               List<String> documentTypes) {
+                                               List<String> documentTypes,
+                                               PersonDetails actor) {
 
         Map<String, String> result = new LinkedHashMap<>(); // сохраняем порядок файлов
 
@@ -377,6 +410,12 @@ public class ClaimsService {
                 );
 
                 documentRepository.save(documentEntity);
+
+                // update claim last update info
+                claim.setLastUpdateAt(LocalDateTime.now());
+                if (actor != null) claim.setLastUpdateBy(actor.getPerson());
+                claim.setLastUpdate("Документ добавлен: " + filename);
+                claimRepository.save(claim);
 
                 result.put(filename, "Успешно");
 

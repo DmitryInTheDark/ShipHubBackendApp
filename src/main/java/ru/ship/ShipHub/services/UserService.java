@@ -3,6 +3,7 @@ package ru.ship.ShipHub.services;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.UserUpdateDTO;
 import ru.ship.ShipHub.models.entity.LegalInfoEntity;
@@ -101,5 +102,9 @@ public class UserService {
         if (dto.getLegalInfo() != null || dto.getPhysicalInfo() != null) {
             throw new BadRequestException("Менеджеру нельзя обновлять данные юридического или физического лица");
         }
+    }
+
+    public PersonDTO getUser(PersonDetails personDetails) {
+        return mapper.map(personRepository.findById(personDetails.getPerson().getId()).orElseThrow(PersonNotFoundException::new));
     }
 }

@@ -6,6 +6,6 @@ public enum ClaimStatus {
     APPROVED,
     IN_PROGRESS,
     TESTS_COMPLETED,
-    DOCUMENTS_DELIVERED
-
+    DOCUMENTS_DELIVERED,
+    ENDED
 }

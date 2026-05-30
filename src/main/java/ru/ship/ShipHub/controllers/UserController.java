@@ -1,11 +1,9 @@
 package ru.ship.ShipHub.controllers;
 
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+import ru.ship.ShipHub.config.security.PersonDetails;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.UserUpdateDTO;
 import ru.ship.ShipHub.services.UserService;
@@ -26,5 +24,12 @@ public class UserController {
             @RequestBody @Valid UserUpdateDTO updateRequest
     ) {
         return userService.updateUser(id, updateRequest);
+    }
+
+    @GetMapping
+    public PersonDTO updateUser(
+            @AuthenticationPrincipal PersonDetails personDetails
+    ) {
+        return userService.getUser(personDetails);
     }
 }

@@ -41,9 +41,8 @@ public class EquipmentEntity {
     @Column(name = "custom_type")
     private String customType;
 
-    @OneToOne(
-            mappedBy = "equipment"
-    )
+    @OneToOne
+    @JoinColumn(name = "claim_id", referencedColumnName = "id")
     private ClaimEntity claim;
 
     public EquipmentEntity() {}

@@ -47,8 +47,7 @@ public class ClaimEntity {
     @Column(name = "additional_info")
     private String additionalInfo;
 
-    @OneToOne
-    @JoinColumn(name = "equipment_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "claim", cascade = CascadeType.ALL, orphanRemoval = true)
     private EquipmentEntity equipment;
 
     @ManyToOne(targetEntity = PersonEntity.class)
@@ -60,6 +59,12 @@ public class ClaimEntity {
 
     @Column(name = "last_update")
     private String lastUpdate;
+
+    @Column(name = "last_update_at")
+    private java.time.LocalDateTime lastUpdateAt;
+
+    @ManyToOne(targetEntity = PersonEntity.class)
+    private PersonEntity lastUpdateBy;
 
     @OneToMany(
             targetEntity = MessageEntity.class,
@@ -220,7 +225,25 @@ public class ClaimEntity {
     }
 
     public String getLastUpdate() {
-        return lastUpdate;
+        if (lastUpdate != null) return lastUpdate;
+        if (lastUpdateAt != null) return lastUpdateAt.toString();
+        return null;
+    }
+
+    public java.time.LocalDateTime getLastUpdateAt() {
+        return lastUpdateAt;
+    }
+
+    public void setLastUpdateAt(java.time.LocalDateTime lastUpdateAt) {
+        this.lastUpdateAt = lastUpdateAt;
+    }
+
+    public PersonEntity getLastUpdateBy() {
+        return lastUpdateBy;
+    }
+
+    public void setLastUpdateBy(PersonEntity lastUpdateBy) {
+        this.lastUpdateBy = lastUpdateBy;
     }
 
     public void setLastUpdate(String lastUpdate) {

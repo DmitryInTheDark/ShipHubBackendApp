@@ -53,6 +53,10 @@ public interface ClaimRepository extends JpaRepository<ClaimEntity, Long> {
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     List<ClaimEntity> findByWhoCreateId(Long userId);
 
+    @Query("SELECT c FROM ClaimEntity c WHERE c.whoCreate.id = :userId AND c.lastUpdateBy.id <> :userId AND c.lastUpdateAt IS NOT NULL")
+    @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
+    List<ClaimEntity> findNotificationsForUser(Long userId);
+
     @EntityGraph(attributePaths = { "equipment", "equipment.images", "documentsIds"})
     Page<ClaimEntity> findByWhoCreateId(Long userId, Pageable pageable);
 

@@ -69,14 +69,15 @@ public class ClaimsController {
             @RequestPart(value = "photo1", required = false) MultipartFile photo1,
             @RequestPart(value = "photo2", required = false) MultipartFile photo2,
             @RequestPart(value = "photo3", required = false) MultipartFile photo3,
-            @PathVariable("id") Long id
+            @PathVariable("id") Long id,
+            @AuthenticationPrincipal PersonDetails personDetails
     ){
         var notNullablePhotos = new ArrayList<>();
         if (photo1 != null) notNullablePhotos.add(photo1);
         if (photo2 != null) notNullablePhotos.add(photo2);
         if (photo3 != null) notNullablePhotos.add(photo3);
         if (notNullablePhotos.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Фотографии отсутствуют"));
-        var problems = claimsService.attachPhotos(id, photo1, photo2, photo3);
+        var problems = claimsService.attachPhotos(id, photo1, photo2, photo3, personDetails);
         if (problems.size() == notNullablePhotos.size()){
             return ResponseEntity.status(400).body(Map.of("error", "Ни один из файлов не удалось загрузить на сервер"));
         }else if (!problems.isEmpty()){
@@ -84,6 +85,14 @@ public class ClaimsController {
         }else{
             return ResponseEntity.status(201).build();
         }
+    }
+
+    @PreAuthorize("hasRole('PHYSICAL', 'LEGAL', 'MANAGER')")
+    @GetMapping(value = "/notifications")
+    public java.util.List<ru.ship.ShipHub.models.dto.NotificationDTO> getNotifications(
+            @AuthenticationPrincipal PersonDetails personDetails
+    ){
+        return claimsService.getNotifications(personDetails);
     }
 
     @GetMapping("/{id}")
@@ -125,12 +134,14 @@ public class ClaimsController {
 //        return claimsService.getClaimsByStatus(pageNumber, pageSize, status, personDetails);
 //    }
 
+    @PreAuthorize("hasRole('MANAGER')")
     @PatchMapping("/{id}/update")
     public ClaimDTO updateClaim(
             @PathVariable Long id,
-            @RequestBody UpdateClaimDTO dto
+            @RequestBody UpdateClaimDTO dto,
+            @AuthenticationPrincipal PersonDetails personDetails
     ){
-        return claimsService.updateClaim(id, dto);
+        return claimsService.updateClaim(id, dto, personDetails);
     }
 
 
@@ -139,9 +150,10 @@ public class ClaimsController {
     public ResponseEntity attachDocument(
             @PathVariable("id") Long documentId,
             @RequestPart MultipartFile document,
-            @RequestParam("document_type") String documentType
+            @RequestParam("document_type") String documentType,
+            @AuthenticationPrincipal PersonDetails personDetails
     ){
-        var result = claimsService.attachDocument(documentId, document, documentType);
+        var result = claimsService.attachDocument(documentId, document, documentType, personDetails);
         if (result) return ResponseEntity.status(201).build();
         else return ResponseEntity.status(400).body(Map.of("error", "Не удалось загрузить файл"));
     }
@@ -150,9 +162,10 @@ public class ClaimsController {
     public ResponseEntity attachDocuments(
             @PathVariable("id") Long documentId,
             @RequestPart List<MultipartFile> documents,
-            @RequestParam("document_types") List<String> documentTypes
+            @RequestParam("document_types") List<String> documentTypes,
+            @AuthenticationPrincipal PersonDetails personDetails
     ){
-        var response = claimsService.attachDocuments(documentId, documents, documentTypes);
+        var response = claimsService.attachDocuments(documentId, documents, documentTypes, personDetails);
         if (response.isEmpty()) return ResponseEntity.status(201).build();
         else return ResponseEntity.status(201).body(response);
     }

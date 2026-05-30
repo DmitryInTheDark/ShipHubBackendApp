@@ -106,7 +106,7 @@ public class Mapper {
 
     public EquipmentDTO map(EquipmentEntity entity){
         return new EquipmentDTO(
-                entity.getId(),
+                entity.getId() == null ? null : entity.getId(),
                 entity.getEquipmentType(),
                 entity.getName(),
                 entity.getManufacturer(),
