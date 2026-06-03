@@ -44,7 +44,7 @@ public class UserService {
         }
 
         if (dto.getIsActive() != null) {
-            person.setActive(dto.getIsActive());
+            person.setIsActive(dto.getIsActive());
         }
 
         if (dto.getVerificationCode() != null) {

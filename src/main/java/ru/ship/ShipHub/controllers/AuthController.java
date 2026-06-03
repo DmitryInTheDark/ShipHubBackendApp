@@ -1,16 +1,9 @@
 package ru.ship.ShipHub.controllers;
 
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.ship.ShipHub.models.dto.auth.LoginRequestDTO;
-import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
-import ru.ship.ShipHub.models.dto.auth.VerifyCodeRequestDTO;
+import org.springframework.web.bind.annotation.*;
+import ru.ship.ShipHub.models.dto.auth.*;
 import ru.ship.ShipHub.models.response.AuthResponse;
 import ru.ship.ShipHub.services.AuthService;
 import ru.ship.ShipHub.util.JWTUtil;
@@ -22,13 +15,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService service;
-    private final Logger log;
     private final JWTUtil jwtUtil;
 
     public AuthController(AuthService service, JWTUtil jwtUtil) {
         this.service = service;
         this.jwtUtil = jwtUtil;
-        this.log = LoggerFactory.getLogger(AuthController.class);
     }
 
     @PostMapping("/login")
@@ -60,4 +51,32 @@ public class AuthController {
                 person
         );
     }
+
+    @PostMapping("/restore_password/request")
+    public ResponseEntity requestToRestorePassword(
+            @RequestBody @Valid RestorePasswordEmailRequestDTO dto
+    ){
+        service.requestToRestorePassword(dto.email());
+        return ResponseEntity.ok().body(Map.of("response", "Код отправлен на почту " + dto.email()));
+    }
+
+    @PostMapping("/restore_password")
+    public ResponseEntity verifyRestorePasswordCode(
+            @RequestBody @Valid VerifyRestorePasswordCodeDTO dto
+    ){
+        var token = service.validateRestorePasswordCode(dto.email(), dto.code());
+        return ResponseEntity.ok(Map.of("token", token));
+    }
+
+    @PatchMapping("/restore_password")
+    public AuthResponse restorePassword(
+            @RequestBody @Valid RestorePasswordDTO dto
+    ){
+        var person = service.restorePassword(dto);
+        return new AuthResponse(
+                jwtUtil.generateToken(person.getId(), person.getUsername(), person.getType().toString()),
+                person
+        );
+    }
+
 }

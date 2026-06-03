@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.ship.ShipHub.models.dto.PersonDTO;
 import ru.ship.ShipHub.models.dto.auth.RegistrationRequestDTO;
+import ru.ship.ShipHub.models.dto.auth.RestorePasswordDTO;
 import ru.ship.ShipHub.models.entity.LegalInfoEntity;
 import ru.ship.ShipHub.models.entity.PersonEntity;
 import ru.ship.ShipHub.models.entity.PhysicalInfoEntity;
@@ -23,6 +24,8 @@ import ru.ship.ShipHub.util.exceptions.BadRequestException;
 import ru.ship.ShipHub.util.exceptions.PersonIsExistException;
 import ru.ship.ShipHub.util.exceptions.PersonNotFoundException;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -59,7 +62,7 @@ public class AuthService {
             String password
     ){
         PersonEntity person = personRepository.findByEmail(email).orElseThrow(() -> new BadCredentialsException("Неверный логин"));
-        if (!person.getActive()){
+        if (!person.getIsActive()){
             throw new BadCredentialsException("Активируйте аккаунт перед тем, как авторизоваться");
         }
         log.info(passwordEncoder.encode("password"));
@@ -78,7 +81,7 @@ public class AuthService {
         PersonEntity person;
         if (personOptional.isPresent()){
             person = personOptional.get();
-            if (person.getActive()) throw new BadRequestException("Пользователь с таким email уже существует");
+            if (person.getIsActive()) throw new BadRequestException("Пользователь с таким email уже существует");
         }else {
             person = personRepository.save(mapper.map(dto));
             person.setPassword(passwordEncoder.encode(dto.password));
@@ -123,12 +126,12 @@ public class AuthService {
 
     public PersonDTO verifyCode(String email, String code){
         var person = personRepository.findByEmail(email).orElseThrow(() -> new PersonNotFoundException("Пользователь не найден"));
-        if (person.getActive()){
+        if (person.getIsActive()){
             throw new PersonIsExistException("Пользователь уже существует");
         }else if (!Objects.equals(code, person.getVerificationCode())){
             throw new IllegalArgumentException("Неправильный код");
         }else{
-            person.setActive(true);
+            person.setIsActive(true);
             person.setVerificationCode(null);
             personRepository.save(person);
         }
@@ -186,4 +189,51 @@ public class AuthService {
         personRepository.save(person);
     }
 
+    @Transactional
+    public void requestToRestorePassword(String email) {
+        var person = personRepository.findByEmail(email).orElseThrow(PersonNotFoundException::new);
+        var code = generateCode();
+        try{
+            sendMail(email, code);
+        }catch (MailSendException e){
+            throw new MailSendException("Не удалось отправить письмо, повторите попытку позже");
+        }
+        person.setVerificationCode(code);
+        personRepository.save(person);
+    }
+
+    @Transactional
+    public String validateRestorePasswordCode(String email, String code){
+        var person = personRepository.findByEmail(email).orElseThrow(PersonNotFoundException::new);
+        if (person.getVerificationCode() == null) {
+            log.error("У пользователя в БД отсутствует код подтверждения ", person.getId());
+            throw new BadRequestException("Ошибка обновления пароля у пользователя");
+        }
+        if (!Objects.equals(person.getVerificationCode(), code)){
+            log.error("Коды не совпадают", person.getId(), code);
+            throw new BadRequestException("Ошибка обновления пароля у пользователя");
+        }
+        var bytes = new byte[32];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(bytes);
+        var token = Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(bytes);
+        person.setVerificationCode(null);
+        person.setToken(token);
+        personRepository.save(person);
+        return token;
+    }
+
+    @Transactional
+    public PersonDTO restorePassword(RestorePasswordDTO dto){
+        var person = personRepository.findByEmail(dto.email()).orElseThrow(PersonNotFoundException::new);
+        var error = new BadRequestException("Ошибка восстановления пароля");
+        if (!Objects.equals(person.getToken(), dto.token())){
+            log.error("токены не совпадают");
+            throw error;
+        }
+        person.setPassword(passwordEncoder.encode(dto.password()));
+        return mapper.map(personRepository.save(person));
+    }
 }

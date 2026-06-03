@@ -1,12 +1,18 @@
 package ru.ship.ShipHub.models.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.ship.ShipHub.util.PersonType;
 
 import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
 public class PersonEntity {
 
     @Column(name = "id")
@@ -39,21 +45,14 @@ public class PersonEntity {
     @OneToOne(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
     private PhysicalInfoEntity physicalInfo;
 
+    @Column(name = "token")
+    private String token;
+
     @OneToMany(
             targetEntity = ClaimEntity.class,
             mappedBy = "whoCreate"
     )
     private List<ClaimEntity> claims;
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public PersonEntity(){}
 
     public PersonEntity(String username, String email, String password, Boolean isActive, String verificationCode, PersonType type, LegalInfoEntity info) {
         this.username = username;
@@ -82,77 +81,5 @@ public class PersonEntity {
         this.isActive = isActive;
         this.verificationCode = verificationCode;
         this.type = type;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public Boolean getActive() {
-        return isActive;
-    }
-
-    public void setActive(Boolean active) {
-        isActive = active;
-    }
-
-    public String getVerificationCode() {
-        return verificationCode;
-    }
-
-    public void setVerificationCode(String verificationCode) {
-        this.verificationCode = verificationCode;
-    }
-
-    public PersonType getType() {
-        return type;
-    }
-
-    public void setType(PersonType type) {
-        this.type = type;
-    }
-
-    public LegalInfoEntity getLegalInfo() {
-        return legalInfo;
-    }
-
-    public void setLegalInfo(LegalInfoEntity legalInfo) {
-        this.legalInfo = legalInfo;
-    }
-
-    public PhysicalInfoEntity getPhysicalInfo() {
-        return physicalInfo;
-    }
-
-    public void setPhysicalInfo(PhysicalInfoEntity physicalInfo) {
-        this.physicalInfo = physicalInfo;
-    }
-
-    public List<ClaimEntity> getClaims() {
-        return claims;
-    }
-
-    public void setClaims(List<ClaimEntity> claims) {
-        this.claims = claims;
     }
 }

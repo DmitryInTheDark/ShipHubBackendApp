@@ -1,0 +1,15 @@
+package ru.ship.ShipHub.models.dto.auth;
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
+public record RestorePasswordDTO(
+        @NotEmpty
+        @Size(min = 3, max = 256, message = "Адрес почты должен быть длинной от 3 до 256 символов")
+        String email,
+        @NotEmpty
+//    @Size(min = 5, max = 5, message = "Код должен быть длинной пять символов")
+        String token,
+        @NotEmpty
+        String password
+){}

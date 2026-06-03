@@ -20,7 +20,7 @@ public class DataInitializer {
                 manager.setUsername("Анатолий");
                 manager.setPassword(passwordEncoder.encode("password"));
                 manager.setType(PersonType.MANAGER);
-                manager.setActive(true);
+                manager.setIsActive(true);
                 personRepository.save(manager);
             }
         };
