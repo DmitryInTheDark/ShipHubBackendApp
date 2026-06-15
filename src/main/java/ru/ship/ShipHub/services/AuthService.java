@@ -234,6 +234,7 @@ public class AuthService {
             throw error;
         }
         person.setPassword(passwordEncoder.encode(dto.password()));
+        person.setIsActive(true);
         return mapper.map(personRepository.save(person));
     }
 }
