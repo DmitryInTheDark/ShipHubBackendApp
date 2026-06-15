@@ -15,7 +15,7 @@ public class MailUtil {
     private final String mailAddress;
     private final Logger log;
 
-    public MailUtil(JavaMailSender mailSender, @Value("mail.address") String mailAddress) {
+    public MailUtil(JavaMailSender mailSender, @Value("${mail.address}") String mailAddress) {
         this.mailSender = mailSender;
         this.mailAddress = mailAddress;
         this.log = LoggerFactory.getLogger(MailUtil.class);
@@ -24,8 +24,10 @@ public class MailUtil {
     public void sendMessage(String receiver, String sender, String text) throws MailSendException {
         log.info("Mail send");
         SimpleMailMessage message = new SimpleMailMessage();
+        log.info(mailAddress);
         message.setFrom(mailAddress);
         message.setTo(receiver);
+        message.setSubject("Подтверждение почты");
 //        message.setSubject(sender);
 //        message.setFrom(sender);
         message.setText(text);
